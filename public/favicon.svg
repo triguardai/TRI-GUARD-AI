@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="ringA" x1="12" x2="52" y1="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6" />
+      <stop offset="1" stop-color="#22D3EE" />
+    </linearGradient>
+    <linearGradient id="ringB" x1="18" x2="46" y1="14" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A855F7" />
+      <stop offset="1" stop-color="#38BDF8" />
+    </linearGradient>
+    <radialGradient id="coreGlow" cx="0" cy="0" r="1" gradientTransform="translate(32 32) rotate(90) scale(24)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E293B" />
+      <stop offset="1" stop-color="#020617" />
+    </radialGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="18" fill="#020617" />
+  <circle cx="32" cy="32" r="22" fill="url(#coreGlow)" />
+
+  <ellipse cx="32" cy="32" rx="20" ry="9.5" stroke="url(#ringA)" stroke-width="3" />
+  <ellipse cx="32" cy="32" rx="20" ry="9.5" stroke="url(#ringB)" stroke-width="3" transform="rotate(60 32 32)" />
+  <ellipse cx="32" cy="32" rx="20" ry="9.5" stroke="url(#ringA)" stroke-width="3" transform="rotate(120 32 32)" />
+
+  <path
+    d="M32 16L22 20.2V29.9C22 37.6 26.2 44.6 32 48C37.8 44.6 42 37.6 42 29.9V20.2L32 16Z"
+    fill="#E2E8F0"
+    fill-opacity=".12"
+    stroke="#E2E8F0"
+    stroke-opacity=".85"
+    stroke-width="2.2"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M27.8 32.2L30.6 35L36.8 28.8"
+    stroke="#E2E8F0"
+    stroke-width="2.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
