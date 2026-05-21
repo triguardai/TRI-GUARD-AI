@@ -207,24 +207,62 @@ const TrackingView = () => (
 
 const buildFallbackReply = (prompt) => {
   const text = prompt.toLowerCase();
+  const getField = (label) => {
+    const match = prompt.match(new RegExp(`${label}\\s*:\\s*(.+)`, 'i'));
+    return match?.[1]?.trim();
+  };
+
+  const formatRupiah = (value) => {
+    const numericValue = Number(String(value || '').replace(/[^\d]/g, ''));
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      return null;
+    }
+
+    return new Intl.NumberFormat('id-ID').format(numericValue);
+  };
+
+  const transactionFields = ['barang', 'harga sepakat', 'pembeli', 'penjual'];
+  const hasTransactionDetails = transactionFields.some((field) => text.includes(field));
+
+  if (hasTransactionDetails) {
+    const hargaSepakat = getField('harga sepakat');
+    const pembeli = getField('pembeli') || 'Pembeli';
+    const formattedHarga = formatRupiah(hargaSepakat);
+    const biayaAdmin = 100000;
+    const total = formattedHarga ? Number(String(hargaSepakat).replace(/[^\d]/g, '')) + biayaAdmin : null;
+    const formattedTotal = total ? new Intl.NumberFormat('id-ID').format(total) : null;
+
+    return `Rincian transaksi
+
+Harga Barang: Rp ${formattedHarga || '-'}
+Biaya Admin AI (Flat): Rp ${new Intl.NumberFormat('id-ID').format(biayaAdmin)}
+Total ditransfer: Rp ${formattedTotal || '-'}
+
+${pembeli} bisa transfer Rp ${formattedTotal || '-'} ke rekening escrow kami:
+BCA: 1122334455 (TriGuard AI)`;
+  }
 
   if (text.includes('resi') || text.includes('pengiriman') || text.includes('kurir')) {
-    return 'TriGuard AI bisa membaca nomor resi yang dikirim di chat, lalu mengecek status pengiriman lewat integrasi API kurir seperti J&T dan JNE sampai status delivered.';
+    return 'Bisa. TriGuard AI akan baca nomor resi yang kamu kirim lalu cek status pengiriman lewat integrasi kurir seperti J&T atau JNE. Jadi kamu bisa pantau progresnya tanpa ribet.';
   }
 
   if (text.includes('mutasi') || text.includes('bayar') || text.includes('transfer')) {
-    return 'Bot Rekber TriGuard dapat memverifikasi dana masuk ke rekening escrow, menahan dana sementara, lalu mencairkannya setelah pembeli mengonfirmasi barang diterima.';
+    return 'Bisa. Bot Rekber TriGuard akan cek dana yang masuk ke escrow, menahan sementara, lalu bantu lanjut ke pencairan setelah pembeli konfirmasi barang diterima.';
   }
 
-  if (text.includes('/rekber') || text.includes('command') || text.includes('bot')) {
-    return 'Alur utamanya dimulai dari command seperti /rekber. Setelah itu bot mengumpulkan detail transaksi, menghitung total pembayaran, memantau mutasi, dan mengarahkan proses sampai pencairan selesai.';
+  if (text.includes('/rekber')) {
+    return 'Halo, siap bantu. Isi detail transaksi berikut dulu ya:\n\nBarang:\nHarga Sepakat:\nPembeli:\nPenjual:';
+  }
+
+  if (text.includes('command') || text.includes('bot') || text.includes('rekber')) {
+    return 'Biasanya alurnya dimulai dari perintah /rekber. Setelah itu bot minta detail transaksi, hitung total pembayaran, pantau mutasi, lalu lanjut sampai dana aman dan selesai dicairkan.';
   }
 
   if (text.includes('admin') || text.includes('biaya')) {
-    return 'Biaya admin bisa diatur sesuai skema bisnis bank atau platform. Pada demo ini, bot menampilkan biaya flat agar simulasi alurnya mudah dipahami.';
+    return 'Biaya admin bisa disesuaikan dengan skema bank atau platform. Di demo ini aku pakai nominal flat supaya alurnya gampang diikuti.';
   }
 
-  return 'TriGuard AI adalah bot escrow otomatis untuk transaksi online. Sistem ini menggabungkan verifikasi mutasi, command chat, blacklist rekening, dan pelacakan resi agar transaksi lebih aman.';
+  return 'TriGuard AI itu bot escrow untuk transaksi online yang bantu verifikasi mutasi, pantau resi, dan jaga alur chat supaya prosesnya terasa lebih aman dan rapi.';
 };
 
 const BankReceipt = ({ type, title, amount, date, bank, account, name }) => (
@@ -363,15 +401,14 @@ const AccountChecker = () => {
           className="mx-auto mb-12 max-w-3xl text-center"
         >
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-sm font-medium text-blue-400">
-            <Search className="h-4 w-4" /> AI OSINT Scraping
+            <Search className="h-4 w-4" /> Demo Pendukung: Cek Blacklist Rekening
           </div>
           <h2 className="mb-6 text-3xl font-bold text-white md:text-5xl">
-            Database Blacklist Penipu
+            Cek Rekening Sebelum Transaksi
           </h2>
           <p className="text-lg text-slate-400">
-            AI kami menyisir Facebook, Twitter, dan Instagram 24/7 untuk menemukan
-            keluhan korban dan mem-blacklist rekening penipu sebelum mereka menipu
-            nasabah bank Anda.
+            Cocok sebagai demo pendukung untuk lihat status rekening, trust score,
+            dan sinyal risiko sebelum lanjut ke proses rekber utama.
           </p>
         </motion.div>
 
@@ -530,7 +567,7 @@ const RekberSimulation = () => {
   const [activeTab, setActiveTab] = useState('group');
 
   const groupChatMessages = [
-    { type: 'system', text: 'Budi (Pembeli) membuat grup REKBER IPHONE 13 PRO' },
+    { type: 'system', text: 'Budi dan Dimas mulai grup REKBER iPhone 13 Pro' },
     { type: 'system', text: 'Pesan diamankan dengan enkripsi end-to-end oleh AI.' },
     {
       sender: 'Budi (Pembeli)',
@@ -542,7 +579,7 @@ const RekberSimulation = () => {
       sender: 'TriGuard Bot',
       role: 'admin',
       avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
-      text: 'Halo! Selamat datang di layanan TriGuard AI Escrow.\n\nUntuk memulai pengamanan dana transaksi Anda, silakan isi rincian berikut:\n\nFormat Transaksi:\nBarang:\nHarga Sepakat:\nPembeli:\nPenjual:',
+      text: 'Halo, siap bantu. Isi detail transaksi berikut dulu ya:\n\nBarang:\nHarga Sepakat:\nPembeli:\nPenjual:',
     },
     {
       sender: 'Budi (Pembeli)',
@@ -559,7 +596,7 @@ const RekberSimulation = () => {
       sender: 'TriGuard Bot',
       role: 'admin',
       avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
-      text: 'RINCIAN TRANSAKSI\n\nHarga Barang: Rp 2.000.000\nBiaya Admin AI (Flat): Rp 100.000\nTOTAL DITRANSFER: Rp 2.100.000\n\nSilakan Pembeli (Budi) mentransfer Rp 2.100.000 ke rekening Escrow kami:\nBCA: 1122334455 (TriGuard AI)',
+      text: 'Rincian transaksi\n\nHarga Barang: Rp 2.000.000\nBiaya Admin AI (Flat): Rp 100.000\nTotal ditransfer: Rp 2.100.000\n\nBudi bisa transfer Rp 2.100.000 ke rekening escrow kami:\nBCA: 1122334455 (TriGuard AI)',
     },
     {
       sender: 'Budi (Pembeli)',
@@ -568,7 +605,7 @@ const RekberSimulation = () => {
       attachment: (
         <BankReceipt
           type="in"
-          title="Mutasi AI Mendeteksi Dana"
+          title="TriGuard Mendeteksi Dana Masuk"
           amount="2.100.000"
           date="15 Mei 2026, 14:15 WIB"
           bank="BCA Budi Santoso"
@@ -581,19 +618,19 @@ const RekberSimulation = () => {
     {
       sender: 'System AI',
       role: 'ai_action',
-      text: 'Verifikasi API Bank... Rp 2.100.000 Valid & Dibekukan di Brankas.',
+      text: 'Verifikasi bank selesai. Dana Rp 2.100.000 aman di escrow.',
     },
     {
       sender: 'TriGuard Bot',
       role: 'admin',
       avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
-      text: 'DANA DIAMANKAN\n\nPenjual (Dimas), silakan kirim barang melalui kurir dan wajib kirim nomor Resi di grup ini agar AI dapat melacaknya.',
+      text: 'Dana sudah diamankan. Dimas, silakan kirim barang lewat kurir dan kirim nomor resi di grup supaya aku bisa lacak.',
     },
     {
       sender: 'Dimas (Penjual)',
       role: 'seller',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
-      text: 'Oke siap min, otw konter J&T.',
+      text: 'Oke siap, aku antar ke J&T sekarang.',
     },
     { type: 'system', text: '... 2 Jam Kemudian ...' },
     {
@@ -605,7 +642,7 @@ const RekberSimulation = () => {
     {
       sender: 'System AI',
       role: 'ai_action',
-      text: 'API J&T Connected. Melacak JNT001122334455...',
+      text: 'J&T terhubung. Lagi lacak JNT001122334455...',
     },
     { type: 'system', text: '... 2 Hari Kemudian ...' },
     {
@@ -618,7 +655,7 @@ const RekberSimulation = () => {
       sender: 'TriGuard Bot',
       role: 'admin',
       avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
-      text: 'KONFIRMASI DITERIMA\n\nAI mencatat Resi telah berstatus DELIVERED dan Pembeli setuju.\nSilakan Penjual (Dimas) ketik detail rekening pencairan:\n\nBank:\nNo Rekening:\nAtas Nama:',
+      text: 'Konfirmasi sudah masuk. Resi terdeteksi delivered dan pembeli setuju. Silakan Dimas kirim detail rekening pencairan:\n\nBank:\nNo Rekening:\nAtas Nama:',
     },
     {
       sender: 'Dimas (Penjual)',
@@ -629,7 +666,7 @@ const RekberSimulation = () => {
     {
       sender: 'System AI',
       role: 'ai_action',
-      text: 'Mengecek OSINT Scraper untuk Rekening 9988776655... Bersih. Trust Score: 98%.',
+      text: 'Lagi cek rekening 9988776655 lewat OSINT scraper... hasilnya bersih, trust score 98%.',
     },
     {
       sender: 'TriGuard Bot',
@@ -646,7 +683,7 @@ const RekberSimulation = () => {
           name="DIMAS PRATAMA"
         />
       ),
-      text: 'PENCAIRAN BERHASIL\n\nDana bersih Rp 2.000.000 sudah ditransfer. Terima kasih menggunakan TriGuard AI!',
+      text: 'Pencairan berhasil. Dana bersih Rp 2.000.000 sudah dikirim ke penjual. Terima kasih sudah pakai TriGuard.',
     },
   ];
 
@@ -730,7 +767,7 @@ const RekberSimulation = () => {
                     : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <User className="h-4 w-4" /> 1. Chat Pribadi
+                <User className="h-4 w-4" /> 1. Negosiasi Awal
               </button>
               <button
                 onClick={() => setActiveTab('group')}
@@ -740,7 +777,7 @@ const RekberSimulation = () => {
                     : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <Bot className="h-4 w-4" /> 2. Grup AI
+                <Bot className="h-4 w-4" /> 2. Demo Utama /rekber
               </button>
               <button
                 onClick={() => setActiveTab('tracking')}
@@ -750,7 +787,7 @@ const RekberSimulation = () => {
                     : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <Truck className="h-4 w-4" /> 3. Lacak Resi
+                <Truck className="h-4 w-4" /> 3. Demo Pendukung: Cek Resi
               </button>
             </div>
 
@@ -767,7 +804,7 @@ const RekberSimulation = () => {
                       >
                         <ChevronRight className="h-5 w-5 rotate-180" />
                       </button>
-                      <h3 className="text-sm font-bold text-white">Pelacakan Resi Kurir</h3>
+                      <h3 className="text-sm font-bold text-white">Demo Pendukung: Pelacakan Resi</h3>
                     </div>
                     <TrackingView />
                   </>
@@ -785,7 +822,7 @@ const RekberSimulation = () => {
                           </div>
                           <div>
                             <h3 className="w-48 truncate text-sm font-bold text-white">
-                              REKBER IPHONE 13 PRO
+                              Demo Utama /rekber
                             </h3>
                             <p className="flex items-center gap-1 text-xs text-emerald-400">
                               <Bot className="h-3 w-3" /> TriGuard Bot (AI) Aktif
@@ -922,15 +959,15 @@ const RekberSimulation = () => {
             className="order-1 lg:order-2 lg:w-1/2"
           >
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-400">
-              <MessageSquare className="h-4 w-4" /> Skenario Barang Fisik
+              <MessageSquare className="h-4 w-4" /> Demo Utama: /rekber
             </div>
             <h2 className="mb-6 text-3xl font-bold text-white md:text-4xl">
-              Automasi Berbasis Command & Lacak API Ekspedisi
+              Alur Utama Transaksi: Dari /rekber Sampai Dana Cair
             </h2>
             <p className="mb-8 leading-relaxed text-slate-400">
-              Mulai dari negosiasi, pembayaran via Bot Escrow, hingga{' '}
-              <strong>Pelacakan Paket Otomatis</strong> terhubung langsung ke API
-              logistik (JNE, J&T).
+              Demo ini memperlihatkan alur utama TriGuard AI: mulai dari perintah
+              <strong> /rekber</strong>, lanjut ke pembayaran escrow, lalu diteruskan
+              ke demo pendukung untuk cek resi dan blacklist rekening.
             </p>
 
             <div className="space-y-6">
@@ -945,8 +982,7 @@ const RekberSimulation = () => {
                   <div>
                     <h4 className="mb-1 font-semibold text-white">1. Negosiasi Alami</h4>
                     <p className="text-sm text-slate-400">
-                      Pembeli dan Penjual bernegosiasi kondisi barang, garansi, dan
-                      harga di obrolan pribadi mereka terlebih dahulu.
+                      Demo pendukung untuk lihat obrolan awal sebelum rekber dimulai.
                     </p>
                   </div>
                 </div>
@@ -961,10 +997,10 @@ const RekberSimulation = () => {
                     <Bot className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="mb-1 font-semibold text-white">2. Eksekusi Bot (/rekber)</h4>
+                    <h4 className="mb-1 font-semibold text-white">2. Demo Utama: /rekber</h4>
                     <p className="text-sm text-slate-400">
-                      AI Escrow merespons command, menjumlahkan harga (2jt) + admin
-                      rekber (100rb) dan otomatis memverifikasi mutasi bank yang masuk.
+                      AI Escrow merespons command, menjumlahkan harga + admin, lalu
+                      menampilkan rincian transaksi secara rapi.
                     </p>
                   </div>
                 </div>
@@ -979,11 +1015,9 @@ const RekberSimulation = () => {
                     <Truck className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="mb-1 font-semibold text-white">3. Integrasi API Kurir</h4>
+                    <h4 className="mb-1 font-semibold text-white">3. Demo Pendukung: Cek Resi</h4>
                     <p className="text-sm text-slate-400">
-                      Penjual tidak bisa menipu dengan resi palsu. AI langsung membaca
-                      API Kurir untuk memastikan resi valid dan paket benar-benar
-                      bergerak.
+                      AI membaca API kurir untuk memastikan resi valid dan paket benar-benar bergerak.
                     </p>
                   </div>
                 </div>
@@ -1576,7 +1610,7 @@ const AIChatbot = () => {
   const [messages, setMessages] = useState([
     {
       role: 'model',
-      text: 'Halo! Saya AI Assistant TriGuard. Ingin tahu lebih detail tentang bagaimana bot Rekber kami merespons command otomatis dan melacak resi pengiriman?',
+      text: 'Halo, aku asisten TriGuard. Kalau kamu mau, aku bisa jelasin cara bot Rekber membaca resi, cek mutasi, atau mulai lewat /rekber.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -1616,7 +1650,7 @@ const AIChatbot = () => {
         systemInstruction: {
           parts: [
             {
-              text: 'Anda adalah Asisten AI untuk TriGuard AI, sistem bot Rekber Escrow otomatis. Jelaskan bahwa AI ini dapat melacak resi pengiriman, membaca mutasi bank, dan dipanggil lewat chat command seperti /rekber. Jawab singkat dan profesional.',
+              text: 'Anda adalah asisten TriGuard AI. Jawab dengan bahasa Indonesia yang hangat, natural, dan jelas. Tetap singkat, tetapi terdengar seperti orang yang membantu, bukan template. Boleh memakai sapaan ringan seperlunya. Jelaskan bahwa sistem ini bisa melacak resi, membaca mutasi bank, dan dipanggil lewat command seperti /rekber. Hindari bahasa yang terlalu kaku, terlalu teknis, atau berulang.',
             },
           ],
         },
@@ -1675,10 +1709,10 @@ const AIChatbot = () => {
                   <Bot className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold">TriGuard AI</h3>
+                  <h3 className="text-sm font-bold">Tanya Cepat TriGuard</h3>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
-                    <span className="text-[10px] text-blue-100">Live Support</span>
+                    <span className="text-[10px] text-blue-100">Quick Support</span>
                   </div>
                 </div>
               </div>
@@ -1693,7 +1727,7 @@ const AIChatbot = () => {
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed ${
+                    className={`max-w-[85%] rounded-2xl whitespace-pre-wrap p-3 text-sm leading-relaxed ${
                       msg.role === 'user'
                         ? 'rounded-br-sm bg-blue-600 text-white'
                         : 'rounded-bl-sm border border-slate-700 bg-slate-800 text-slate-200'
@@ -1725,7 +1759,7 @@ const AIChatbot = () => {
                 type="text"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="Tanya sesuatu ke AI..."
+                placeholder="Tanya cepat soal /rekber, resi, mutasi..."
                 className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white transition-colors focus:border-blue-500 focus:outline-none"
               />
               <button
