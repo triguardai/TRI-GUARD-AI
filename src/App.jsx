@@ -24,6 +24,9 @@ import {
   Wifi,
   Battery,
 } from "lucide-react";
+import { sendMessage } from "./services/aiService";
+import { classifyIntent } from "./utils/intentRouter";
+import { buildFallbackReply } from "./utils/fallback";
 
 const steps = [
   {
@@ -217,84 +220,7 @@ const TrackingView = () => (
   </div>
 );
 
-const buildFallbackReply = (prompt) => {
-  const text = prompt.toLowerCase();
-  const getField = (label) => {
-    const match = prompt.match(new RegExp(`${label}\\s*:\\s*(.+)`, "i"));
-    return match?.[1]?.trim();
-  };
-
-  const formatRupiah = (value) => {
-    const numericValue = Number(String(value || "").replace(/[^\d]/g, ""));
-    if (!Number.isFinite(numericValue) || numericValue <= 0) {
-      return null;
-    }
-
-    return new Intl.NumberFormat("id-ID").format(numericValue);
-  };
-
-  const transactionFields = ["barang", "harga sepakat", "pembeli", "penjual"];
-  const hasTransactionDetails = transactionFields.some((field) =>
-    text.includes(field),
-  );
-
-  if (hasTransactionDetails) {
-    const hargaSepakat = getField("harga sepakat");
-    const pembeli = getField("pembeli") || "Pembeli";
-    const formattedHarga = formatRupiah(hargaSepakat);
-    const biayaAdmin = 100000;
-    const total = formattedHarga
-      ? Number(String(hargaSepakat).replace(/[^\d]/g, "")) + biayaAdmin
-      : null;
-    const formattedTotal = total
-      ? new Intl.NumberFormat("id-ID").format(total)
-      : null;
-
-    return `Rincian transaksi
-
-Harga Barang: Rp ${formattedHarga || "-"}
-Biaya Admin AI (Flat): Rp ${new Intl.NumberFormat("id-ID").format(biayaAdmin)}
-Total ditransfer: Rp ${formattedTotal || "-"}
-
-${pembeli} bisa transfer Rp ${formattedTotal || "-"} ke rekening escrow kami:
-BCA: 1122334455 (TriGuard AI)`;
-  }
-
-  if (
-    text.includes("resi") ||
-    text.includes("pengiriman") ||
-    text.includes("kurir")
-  ) {
-    return "Bisa. TriGuard AI akan baca nomor resi yang kamu kirim lalu cek status pengiriman lewat integrasi kurir seperti J&T atau JNE. Jadi kamu bisa pantau progresnya tanpa ribet.";
-  }
-
-  if (
-    text.includes("mutasi") ||
-    text.includes("bayar") ||
-    text.includes("transfer")
-  ) {
-    return "Bisa. Bot Rekber TriGuard akan cek dana yang masuk ke escrow, menahan sementara, lalu bantu lanjut ke pencairan setelah pembeli konfirmasi barang diterima.";
-  }
-
-  if (text.includes("/rekber")) {
-    return "Halo, siap bantu. Isi detail transaksi berikut dulu ya:\n\nBarang:\nHarga Sepakat:\nPembeli:\nPenjual:";
-  }
-
-  if (
-    text.includes("command") ||
-    text.includes("bot") ||
-    text.includes("rekber")
-  ) {
-    return "Biasanya alurnya dimulai dari perintah /rekber. Setelah itu bot minta detail transaksi, hitung total pembayaran, pantau mutasi, lalu lanjut sampai dana aman dan selesai dicairkan.";
-  }
-
-  if (text.includes("admin") || text.includes("biaya")) {
-    return "Biaya admin bisa disesuaikan dengan skema bank atau platform. Di demo ini aku pakai nominal flat supaya alurnya gampang diikuti.";
-  }
-
-  return "TriGuard AI itu bot escrow untuk transaksi online yang bantu verifikasi mutasi, pantau resi, dan jaga alur chat supaya prosesnya terasa lebih aman dan rapi.";
-};
-
+// `buildFallbackReply` moved to `src/utils/fallback.js`.
 const BankReceipt = ({ type, title, amount, date, bank, account, name }) => (
   <div
     className={`relative my-2 w-full max-w-[240px] overflow-hidden rounded-xl border bg-white p-4 text-slate-800 shadow-md ${
@@ -1735,27 +1661,41 @@ const AIChatbot = () => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+
+    // Auto-grow input until max height, then keep internal scroll.
+    el.style.height = "auto";
+    const maxHeight = 128;
+    const nextHeight = Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${nextHeight}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [input, isOpen]);
+
   const handleSend = async (event) => {
     event?.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const userText = input.trim();
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const apiUrl = import.meta.env.VITE_GEMINI_API_URL;
 
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setIsLoading(true);
 
     try {
-      if (!apiKey || !apiUrl) {
-        await new Promise((resolve) => setTimeout(resolve, 700));
+      const intent = classifyIntent(userText);
+
+      if (intent !== "unknown") {
+        // Known intents are handled locally via fallback logic for now
+        await new Promise((r) => setTimeout(r, 300));
         setMessages((prev) => [
           ...prev,
           { role: "model", text: buildFallbackReply(userText) },
@@ -1763,50 +1703,12 @@ const AIChatbot = () => {
         return;
       }
 
-      const formattedHistory = messages.map((msg) => ({
-        role: msg.role === "model" ? "model" : "user",
-        parts: [{ text: msg.text }],
-      }));
-
-      const payload = {
-        contents: [
-          ...formattedHistory,
-          { role: "user", parts: [{ text: userText }] },
-        ],
-        systemInstruction: {
-          parts: [
-            {
-              text: "Anda adalah asisten TriGuard AI. Jawab dengan bahasa Indonesia yang hangat, natural, dan jelas. Tetap singkat, tetapi terdengar seperti orang yang membantu, bukan template. Boleh memakai sapaan ringan seperlunya. Jelaskan bahwa sistem ini bisa melacak resi, membaca mutasi bank, dan dipanggil lewat command seperti /rekber. Hindari bahasa yang terlalu kaku, terlalu teknis, atau berulang.",
-            },
-          ],
-        },
-      };
-
-      const endpoint = apiUrl.includes("?")
-        ? `${apiUrl}&key=${apiKey}`
-        : `${apiUrl}?key=${apiKey}`;
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed request");
-      }
-
-      const data = await response.json();
-      const modelReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
+      const modelReply = await sendMessage(userText, messages);
       setMessages((prev) => [
         ...prev,
-        {
-          role: "model",
-          text: modelReply || "Sistem AI sedang memuat ulang. Mohon coba lagi.",
-        },
+        { role: "model", text: modelReply },
       ]);
-    } catch {
+    } catch (e) {
       setMessages((prev) => [
         ...prev,
         { role: "model", text: buildFallbackReply(userText) },
@@ -1860,50 +1762,44 @@ const AIChatbot = () => {
               </button>
             </div>
             <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-slate-950 p-4">
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
+              {messages.map((msg, idx) => {
+                return (
                   <div
-                    className={`max-w-[85%] rounded-2xl whitespace-pre-wrap p-3 text-sm leading-relaxed ${
-                      msg.role === "user"
-                        ? "rounded-br-sm bg-blue-600 text-white"
-                        : "rounded-bl-sm border border-slate-700 bg-slate-800 text-slate-200"
-                    }`}
+                    key={idx}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {msg.text}
+                    <div
+                      className={`max-w-[85%] rounded-2xl whitespace-pre-wrap break-words p-3 text-sm leading-relaxed ${
+                        msg.role === "user"
+                          ? "rounded-br-sm bg-blue-600 text-white"
+                          : "rounded-bl-sm border border-slate-700 bg-slate-800 text-slate-200"
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-slate-700 bg-slate-800 p-3">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-slate-500"></span>
-                    <span
-                      className="h-2 w-2 animate-bounce rounded-full bg-slate-500"
-                      style={{ animationDelay: "0.2s" }}
-                    ></span>
-                    <span
-                      className="h-2 w-2 animate-bounce rounded-full bg-slate-500"
-                      style={{ animationDelay: "0.4s" }}
-                    ></span>
-                  </div>
-                </div>
-              )}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
             <form
               onSubmit={handleSend}
               className="flex gap-2 border-t border-slate-800 bg-slate-900 p-3"
             >
-              <input
-                type="text"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder="Tanya cepat soal /rekber, resi, mutasi..."
-                className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white transition-colors focus:border-blue-500 focus:outline-none"
-              />
+              <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder="Tanya cepat /rekber, resi, mutasi."
+                  rows={1}
+                  className="custom-scrollbar max-h-32 flex-1 resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-400 transition-colors focus:border-blue-500 focus:outline-none"
+                />
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
