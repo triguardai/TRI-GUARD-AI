@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck,
   AlertTriangle,
@@ -23,24 +23,24 @@ import {
   Signal,
   Wifi,
   Battery,
-} from 'lucide-react';
+} from "lucide-react";
 
 const steps = [
   {
-    title: 'Pembeli Membayar',
-    desc: 'Dana + Admin ditransfer ke Brankas AI Escrow.',
+    title: "Pembeli Membayar",
+    desc: "Dana + Admin ditransfer ke Brankas AI Escrow.",
   },
   {
-    title: 'Penjual Mengirim',
-    desc: 'Penjual memasukkan resi, AI memverifikasi ke JNE/J&T.',
+    title: "Penjual Mengirim",
+    desc: "Penjual memasukkan resi, AI memverifikasi ke JNE/J&T.",
   },
   {
-    title: 'AI Melacak Resi',
-    desc: 'Sistem memantau pergerakan kurir secara otomatis.',
+    title: "AI Melacak Resi",
+    desc: "Sistem memantau pergerakan kurir secara otomatis.",
   },
   {
-    title: 'Dana Cair',
-    desc: 'Barang diterima, AI melepas dana ke penjual.',
+    title: "Dana Cair",
+    desc: "Barang diterima, AI melepas dana ke penjual.",
   },
 ];
 
@@ -113,11 +113,15 @@ const revealSoft = {
   },
 };
 
-const OrbitLogo = ({ sizeClass = 'h-8 w-8', iconClass = 'h-4 w-4', duration = 10 }) => (
+const OrbitLogo = ({
+  sizeClass = "h-8 w-8",
+  iconClass = "h-4 w-4",
+  duration = 10,
+}) => (
   <div className={`relative ${sizeClass} flex-shrink-0 [perspective:1000px]`}>
     <motion.div
       animate={{ rotateY: 360, rotateX: 360 }}
-      transition={{ duration, repeat: Infinity, ease: 'linear' }}
+      transition={{ duration, repeat: Infinity, ease: "linear" }}
       className="relative h-full w-full [transform-style:preserve-3d]"
     >
       <div className="absolute inset-0 rounded-full border-[2px] border-blue-500/80 [transform:rotateX(0deg)]" />
@@ -125,7 +129,9 @@ const OrbitLogo = ({ sizeClass = 'h-8 w-8', iconClass = 'h-4 w-4', duration = 10
       <div className="absolute inset-0 rounded-full border-[2px] border-cyan-500/80 [transform:rotateX(120deg)]" />
     </motion.div>
     <div className="absolute inset-0 flex items-center justify-center">
-      <ShieldCheck className={`${iconClass} text-white drop-shadow-[0_0_5px_rgba(59,130,246,1)]`} />
+      <ShieldCheck
+        className={`${iconClass} text-white drop-shadow-[0_0_5px_rgba(59,130,246,1)]`}
+      />
     </div>
   </div>
 );
@@ -134,12 +140,16 @@ const TrackingView = () => (
   <div className="custom-scrollbar flex-1 overflow-y-auto bg-[#0B1120] p-5 pb-24">
     <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-400">Informasi Pengiriman</span>
+        <span className="text-sm font-medium text-slate-400">
+          Informasi Pengiriman
+        </span>
         <span className="flex items-center gap-1 rounded-md border border-red-500/20 bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-500">
           <Truck className="h-3 w-3" /> J&T EXPRESS
         </span>
       </div>
-      <div className="text-2xl font-bold tracking-wider text-white">JNT001122334455</div>
+      <div className="text-2xl font-bold tracking-wider text-white">
+        JNT001122334455
+      </div>
       <div className="mt-4 flex items-center justify-between border-t border-slate-800 pt-4">
         <div>
           <p className="mb-0.5 text-xs text-slate-500">Pengirim</p>
@@ -155,7 +165,9 @@ const TrackingView = () => (
       </div>
     </div>
 
-    <h4 className="mb-4 px-1 text-lg font-bold text-white">Riwayat Perjalanan (Live API)</h4>
+    <h4 className="mb-4 px-1 text-lg font-bold text-white">
+      Riwayat Perjalanan (Live API)
+    </h4>
 
     <div className="relative ml-4 space-y-8 border-l-2 border-slate-700 pb-4">
       <div className="relative pl-6">
@@ -207,40 +219,98 @@ const TrackingView = () => (
 
 const buildFallbackReply = (prompt) => {
   const text = prompt.toLowerCase();
+  const getField = (label) => {
+    const match = prompt.match(new RegExp(`${label}\\s*:\\s*(.+)`, "i"));
+    return match?.[1]?.trim();
+  };
 
-  if (text.includes('resi') || text.includes('pengiriman') || text.includes('kurir')) {
-    return 'TriGuard AI bisa membaca nomor resi yang dikirim di chat, lalu mengecek status pengiriman lewat integrasi API kurir seperti J&T dan JNE sampai status delivered.';
+  const formatRupiah = (value) => {
+    const numericValue = Number(String(value || "").replace(/[^\d]/g, ""));
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      return null;
+    }
+
+    return new Intl.NumberFormat("id-ID").format(numericValue);
+  };
+
+  const transactionFields = ["barang", "harga sepakat", "pembeli", "penjual"];
+  const hasTransactionDetails = transactionFields.some((field) =>
+    text.includes(field),
+  );
+
+  if (hasTransactionDetails) {
+    const hargaSepakat = getField("harga sepakat");
+    const pembeli = getField("pembeli") || "Pembeli";
+    const formattedHarga = formatRupiah(hargaSepakat);
+    const biayaAdmin = 100000;
+    const total = formattedHarga
+      ? Number(String(hargaSepakat).replace(/[^\d]/g, "")) + biayaAdmin
+      : null;
+    const formattedTotal = total
+      ? new Intl.NumberFormat("id-ID").format(total)
+      : null;
+
+    return `Rincian transaksi
+
+Harga Barang: Rp ${formattedHarga || "-"}
+Biaya Admin AI (Flat): Rp ${new Intl.NumberFormat("id-ID").format(biayaAdmin)}
+Total ditransfer: Rp ${formattedTotal || "-"}
+
+${pembeli} bisa transfer Rp ${formattedTotal || "-"} ke rekening escrow kami:
+BCA: 1122334455 (TriGuard AI)`;
   }
 
-  if (text.includes('mutasi') || text.includes('bayar') || text.includes('transfer')) {
-    return 'Bot Rekber TriGuard dapat memverifikasi dana masuk ke rekening escrow, menahan dana sementara, lalu mencairkannya setelah pembeli mengonfirmasi barang diterima.';
+  if (
+    text.includes("resi") ||
+    text.includes("pengiriman") ||
+    text.includes("kurir")
+  ) {
+    return "Bisa. TriGuard AI akan baca nomor resi yang kamu kirim lalu cek status pengiriman lewat integrasi kurir seperti J&T atau JNE. Jadi kamu bisa pantau progresnya tanpa ribet.";
   }
 
-  if (text.includes('/rekber') || text.includes('command') || text.includes('bot')) {
-    return 'Alur utamanya dimulai dari command seperti /rekber. Setelah itu bot mengumpulkan detail transaksi, menghitung total pembayaran, memantau mutasi, dan mengarahkan proses sampai pencairan selesai.';
+  if (
+    text.includes("mutasi") ||
+    text.includes("bayar") ||
+    text.includes("transfer")
+  ) {
+    return "Bisa. Bot Rekber TriGuard akan cek dana yang masuk ke escrow, menahan sementara, lalu bantu lanjut ke pencairan setelah pembeli konfirmasi barang diterima.";
   }
 
-  if (text.includes('admin') || text.includes('biaya')) {
-    return 'Biaya admin bisa diatur sesuai skema bisnis bank atau platform. Pada demo ini, bot menampilkan biaya flat agar simulasi alurnya mudah dipahami.';
+  if (text.includes("/rekber")) {
+    return "Halo, siap bantu. Isi detail transaksi berikut dulu ya:\n\nBarang:\nHarga Sepakat:\nPembeli:\nPenjual:";
   }
 
-  return 'TriGuard AI adalah bot escrow otomatis untuk transaksi online. Sistem ini menggabungkan verifikasi mutasi, command chat, blacklist rekening, dan pelacakan resi agar transaksi lebih aman.';
+  if (
+    text.includes("command") ||
+    text.includes("bot") ||
+    text.includes("rekber")
+  ) {
+    return "Biasanya alurnya dimulai dari perintah /rekber. Setelah itu bot minta detail transaksi, hitung total pembayaran, pantau mutasi, lalu lanjut sampai dana aman dan selesai dicairkan.";
+  }
+
+  if (text.includes("admin") || text.includes("biaya")) {
+    return "Biaya admin bisa disesuaikan dengan skema bank atau platform. Di demo ini aku pakai nominal flat supaya alurnya gampang diikuti.";
+  }
+
+  return "TriGuard AI itu bot escrow untuk transaksi online yang bantu verifikasi mutasi, pantau resi, dan jaga alur chat supaya prosesnya terasa lebih aman dan rapi.";
 };
 
 const BankReceipt = ({ type, title, amount, date, bank, account, name }) => (
   <div
     className={`relative my-2 w-full max-w-[240px] overflow-hidden rounded-xl border bg-white p-4 text-slate-800 shadow-md ${
-      type === 'in'
-        ? 'border-gray-200 border-l-4 border-l-blue-500'
-        : 'border-gray-200 border-l-4 border-l-emerald-500'
+      type === "in"
+        ? "border-gray-200 border-l-4 border-l-blue-500"
+        : "border-gray-200 border-l-4 border-l-emerald-500"
     }`}
   >
     <div
-      className={`absolute top-0 left-0 h-1 w-full ${type === 'in' ? 'bg-blue-500' : 'bg-emerald-500'}`}
+      className={`absolute top-0 left-0 h-1 w-full ${type === "in" ? "bg-blue-500" : "bg-emerald-500"}`}
     ></div>
     <div className="mt-1 mb-3 flex items-center gap-2 border-b border-gray-100 pb-3">
-      <div className={`${type === 'in' ? 'bg-blue-100' : 'bg-emerald-100'} rounded-full p-1.5`}>
-        {type === 'in' ? (
+      <div
+        className={`${type === "in" ? "bg-blue-100" : "bg-emerald-100"} rounded-full p-1.5`}
+      >
+        {type === "in" ? (
           <ArrowRightLeft className="h-5 w-5 text-blue-600" />
         ) : (
           <CheckCircle2 className="h-5 w-5 text-emerald-600" />
@@ -253,7 +323,7 @@ const BankReceipt = ({ type, title, amount, date, bank, account, name }) => (
       <p className="mt-1 mb-3 text-xl font-bold text-black">Rp {amount}</p>
       <div className="mt-3 border-t border-dashed border-gray-300 pt-3">
         <p className="mb-0.5 text-gray-500">
-          {type === 'in' ? 'Dana Masuk Dari:' : 'Ditransfer Ke:'}
+          {type === "in" ? "Dana Masuk Dari:" : "Ditransfer Ke:"}
         </p>
         <p className="font-bold text-black">{bank}</p>
         <p className="font-mono text-sm text-gray-700">{account}</p>
@@ -264,39 +334,39 @@ const BankReceipt = ({ type, title, amount, date, bank, account, name }) => (
 );
 
 const AccountChecker = () => {
-  const [accountNumber, setAccountNumber] = useState('');
+  const [accountNumber, setAccountNumber] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState(null);
 
   const scrapedScammers = [
     {
       id: 1,
-      acc: '1234567890',
-      bank: 'BCA',
-      name: 'PENIPU GADUNGAN',
-      platform: 'Twitter / X',
+      acc: "1234567890",
+      bank: "BCA",
+      name: "PENIPU GADUNGAN",
+      platform: "Twitter / X",
       post: '"Tolong bantu report rek BCA 1234567890 atas nama Penipu, dia bawa lari duit beli iPhone..."',
-      date: '2 Hari Lalu',
+      date: "2 Hari Lalu",
       icon: <XIcon className="h-4 w-4 text-sky-400" />,
     },
     {
       id: 2,
-      acc: '0987654321',
-      bank: 'DANA',
-      name: 'SANG MALING',
-      platform: 'Facebook Group',
+      acc: "0987654321",
+      bank: "DANA",
+      name: "SANG MALING",
+      platform: "Facebook Group",
       post: '"Hati-hati nomor DANA 0987654321, nipu jual beli HP. Udah ditransfer malah di block."',
-      date: '5 Hari Lalu',
+      date: "5 Hari Lalu",
       icon: <FacebookIcon className="h-4 w-4 text-blue-500" />,
     },
     {
       id: 3,
-      acc: '1122334455',
-      bank: 'SEABANK',
-      name: 'TUKANG TIPU',
-      platform: 'Instagram',
+      acc: "1122334455",
+      bank: "SEABANK",
+      name: "TUKANG TIPU",
+      platform: "Instagram",
       post: '"Awas akun IG @hp_murah_nipu, pake rek Seabank 1122334455. Jangan sampai ada korban lagi!"',
-      date: '1 Minggu Lalu',
+      date: "1 Minggu Lalu",
       icon: <InstagramIcon className="h-4 w-4 text-pink-500" />,
     },
   ];
@@ -311,39 +381,39 @@ const AccountChecker = () => {
     setTimeout(() => {
       setIsSearching(false);
 
-      if (accountNumber === '9988776655') {
+      if (accountNumber === "9988776655") {
         setResult({
-          status: 'safe',
-          name: 'DIMAS PRATAMA',
-          bank: 'SEABANK',
+          status: "safe",
+          name: "DIMAS PRATAMA",
+          bank: "SEABANK",
           reports: 0,
           trustScore: 98,
           message:
-            'Rekening ini belum pernah dilaporkan terkait penipuan dalam hasil scraping AI kami.',
+            "Rekening ini belum pernah dilaporkan terkait penipuan dalam hasil scraping AI kami.",
         });
         return;
       }
 
-      if (accountNumber === '1234567890' || accountNumber === '0987654321') {
+      if (accountNumber === "1234567890" || accountNumber === "0987654321") {
         setResult({
-          status: 'danger',
-          name: 'TERINDIKASI PENIPUAN',
-          bank: 'BCA / DANA',
+          status: "danger",
+          name: "TERINDIKASI PENIPUAN",
+          bank: "BCA / DANA",
           reports: 12,
           trustScore: 12,
           message:
-            'HATI-HATI! AI menemukan banyak laporan penipuan terkait rekening ini di media sosial.',
+            "HATI-HATI! AI menemukan banyak laporan penipuan terkait rekening ini di media sosial.",
         });
         return;
       }
 
       setResult({
-        status: 'unknown',
-        name: 'TIDAK DIKETAHUI',
-        bank: 'UNKNOWN',
+        status: "unknown",
+        name: "TIDAK DIKETAHUI",
+        bank: "UNKNOWN",
         reports: 0,
         trustScore: 50,
-        message: 'Rekening ini tidak ditemukan dalam database OSINT AI kami.',
+        message: "Rekening ini tidak ditemukan dalam database OSINT AI kami.",
       });
     }, 1500);
   };
@@ -363,15 +433,15 @@ const AccountChecker = () => {
           className="mx-auto mb-12 max-w-3xl text-center"
         >
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-sm font-medium text-blue-400">
-            <Search className="h-4 w-4" /> AI OSINT Scraping
+            <Search className="h-4 w-4" /> Demo Pendukung: Cek Blacklist
+            Rekening
           </div>
           <h2 className="mb-6 text-3xl font-bold text-white md:text-5xl">
-            Database Blacklist Penipu
+            Cek Rekening Sebelum Transaksi
           </h2>
           <p className="text-lg text-slate-400">
-            AI kami menyisir Facebook, Twitter, dan Instagram 24/7 untuk menemukan
-            keluhan korban dan mem-blacklist rekening penipu sebelum mereka menipu
-            nasabah bank Anda.
+            Cocok sebagai demo pendukung untuk lihat status rekening, trust
+            score, dan sinyal risiko sebelum lanjut ke proses rekber utama.
           </p>
         </motion.div>
 
@@ -393,7 +463,9 @@ const AccountChecker = () => {
               type="text"
               placeholder="Cek rekening (Coba: 9988776655 atau 1234567890)..."
               value={accountNumber}
-              onChange={(event) => setAccountNumber(event.target.value.replace(/\D/g, ''))}
+              onChange={(event) =>
+                setAccountNumber(event.target.value.replace(/\D/g, ""))
+              }
               className="w-full rounded-2xl border-2 border-slate-700 bg-slate-800 px-12 py-4 text-lg text-white transition-colors focus:border-blue-500 focus:outline-none"
             />
             <button
@@ -420,43 +492,53 @@ const AccountChecker = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className={`mx-auto mb-12 max-w-2xl rounded-2xl border-2 p-6 ${
-                result.status === 'safe'
-                  ? 'border-emerald-500/30 bg-emerald-900/20'
-                  : result.status === 'danger'
-                    ? 'border-red-500/30 bg-red-900/20'
-                    : 'border-slate-700 bg-slate-800'
+                result.status === "safe"
+                  ? "border-emerald-500/30 bg-emerald-900/20"
+                  : result.status === "danger"
+                    ? "border-red-500/30 bg-red-900/20"
+                    : "border-slate-700 bg-slate-800"
               }`}
             >
               <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
                 <div>
-                  <h3 className="mb-1 text-2xl font-bold text-white uppercase">{result.name}</h3>
+                  <h3 className="mb-1 text-2xl font-bold text-white uppercase">
+                    {result.name}
+                  </h3>
                   <p className="font-mono text-slate-400">
                     {result.bank} - {accountNumber}
                   </p>
                 </div>
                 <div
                   className={`flex items-center gap-2 rounded-xl border px-4 py-2 ${
-                    result.status === 'safe'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                      : result.status === 'danger'
-                        ? 'border-red-500 bg-red-500/10 text-red-400'
-                        : 'border-slate-600 bg-slate-700 text-slate-300'
+                    result.status === "safe"
+                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                      : result.status === "danger"
+                        ? "border-red-500 bg-red-500/10 text-red-400"
+                        : "border-slate-600 bg-slate-700 text-slate-300"
                   }`}
                 >
-                  {result.status === 'safe' && <ShieldCheck className="h-5 w-5" />}
-                  {result.status === 'danger' && <AlertTriangle className="h-5 w-5" />}
-                  {result.status === 'unknown' && <Search className="h-5 w-5" />}
-                  <span className="text-lg font-bold">Trust Score: {result.trustScore}%</span>
+                  {result.status === "safe" && (
+                    <ShieldCheck className="h-5 w-5" />
+                  )}
+                  {result.status === "danger" && (
+                    <AlertTriangle className="h-5 w-5" />
+                  )}
+                  {result.status === "unknown" && (
+                    <Search className="h-5 w-5" />
+                  )}
+                  <span className="text-lg font-bold">
+                    Trust Score: {result.trustScore}%
+                  </span>
                 </div>
               </div>
               <div className="mt-6 flex items-start gap-4 border-t border-white/10 pt-6">
                 <div
                   className={`flex-shrink-0 rounded-full p-3 ${
-                    result.status === 'safe'
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : result.status === 'danger'
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-slate-700 text-slate-400'
+                    result.status === "safe"
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : result.status === "danger"
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-slate-700 text-slate-400"
                   }`}
                 >
                   {result.reports > 0 ? (
@@ -468,18 +550,20 @@ const AccountChecker = () => {
                 <div>
                   <p
                     className={`mb-1 font-semibold ${
-                      result.status === 'safe'
-                        ? 'text-emerald-400'
-                        : result.status === 'danger'
-                          ? 'text-red-400'
-                          : 'text-slate-300'
+                      result.status === "safe"
+                        ? "text-emerald-400"
+                        : result.status === "danger"
+                          ? "text-red-400"
+                          : "text-slate-300"
                     }`}
                   >
                     {result.reports > 0
                       ? `${result.reports} Laporan Penipuan Terdeteksi AI!`
-                      : 'Status: Aman & Terverifikasi'}
+                      : "Status: Aman & Terverifikasi"}
                   </p>
-                  <p className="text-sm leading-relaxed text-slate-400">{result.message}</p>
+                  <p className="text-sm leading-relaxed text-slate-400">
+                    {result.message}
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -502,14 +586,18 @@ const AccountChecker = () => {
                   className="flex flex-col items-start gap-6 p-6 transition-colors hover:bg-slate-800/50 md:flex-row"
                 >
                   <div className="flex min-w-[200px] flex-col gap-1">
-                    <span className="font-mono text-lg font-bold text-red-400">{scammer.acc}</span>
+                    <span className="font-mono text-lg font-bold text-red-400">
+                      {scammer.acc}
+                    </span>
                     <span className="text-sm text-slate-400">
                       {scammer.bank} • {scammer.name}
                     </span>
                   </div>
                   <div className="relative flex-1 rounded-xl border border-slate-800 bg-slate-950 p-4">
                     <div className="absolute top-4 right-4">{scammer.icon}</div>
-                    <p className="mb-3 text-sm italic text-slate-300">{scammer.post}</p>
+                    <p className="mb-3 text-sm italic text-slate-300">
+                      {scammer.post}
+                    </p>
                     <div className="flex items-center gap-2 text-xs text-slate-500">
                       <span>Sumber: {scammer.platform}</span>
                       <span>•</span>
@@ -527,48 +615,56 @@ const AccountChecker = () => {
 };
 
 const RekberSimulation = () => {
-  const [activeTab, setActiveTab] = useState('group');
+  const [activeTab, setActiveTab] = useState("group");
 
   const groupChatMessages = [
-    { type: 'system', text: 'Budi (Pembeli) membuat grup REKBER IPHONE 13 PRO' },
-    { type: 'system', text: 'Pesan diamankan dengan enkripsi end-to-end oleh AI.' },
+    { type: "system", text: "Budi dan Dimas mulai grup REKBER iPhone 13 Pro" },
     {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
-      text: '/rekber',
+      type: "system",
+      text: "Pesan diamankan dengan enkripsi end-to-end oleh AI.",
     },
     {
-      sender: 'TriGuard Bot',
-      role: 'admin',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
-      text: 'Halo! Selamat datang di layanan TriGuard AI Escrow.\n\nUntuk memulai pengamanan dana transaksi Anda, silakan isi rincian berikut:\n\nFormat Transaksi:\nBarang:\nHarga Sepakat:\nPembeli:\nPenjual:',
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
+      text: "/rekber",
     },
     {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
-      text: 'Barang: iPhone 13 Pro 256GB Second\nHarga Sepakat: 2.000.000\nPembeli: Budi\nPenjual: Dimas',
+      sender: "TriGuard Bot",
+      role: "admin",
+      avatar:
+        "https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981",
+      text: "Halo, siap bantu. Isi detail transaksi berikut dulu ya:\n\nBarang:\nHarga Sepakat:\nPembeli:\nPenjual:",
     },
     {
-      sender: 'System AI',
-      role: 'ai_action',
-      text: 'Menghitung Biaya Layanan & Menyiapkan Virtual Account...',
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
+      text: "Barang: iPhone 13 Pro 256GB Second\nHarga Sepakat: 2.000.000\nPembeli: Budi\nPenjual: Dimas",
     },
     {
-      sender: 'TriGuard Bot',
-      role: 'admin',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
-      text: 'RINCIAN TRANSAKSI\n\nHarga Barang: Rp 2.000.000\nBiaya Admin AI (Flat): Rp 100.000\nTOTAL DITRANSFER: Rp 2.100.000\n\nSilakan Pembeli (Budi) mentransfer Rp 2.100.000 ke rekening Escrow kami:\nBCA: 1122334455 (TriGuard AI)',
+      sender: "System AI",
+      role: "ai_action",
+      text: "Menghitung Biaya Layanan & Menyiapkan Virtual Account...",
     },
     {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
+      sender: "TriGuard Bot",
+      role: "admin",
+      avatar:
+        "https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981",
+      text: "Rincian transaksi\n\nHarga Barang: Rp 2.000.000\nBiaya Admin AI (Flat): Rp 100.000\nTotal ditransfer: Rp 2.100.000\n\nBudi bisa transfer Rp 2.100.000 ke rekening escrow kami:\nBCA: 1122334455 (TriGuard AI)",
+    },
+    {
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
       attachment: (
         <BankReceipt
           type="in"
-          title="Mutasi AI Mendeteksi Dana"
+          title="TriGuard Mendeteksi Dana Masuk"
           amount="2.100.000"
           date="15 Mei 2026, 14:15 WIB"
           bank="BCA Budi Santoso"
@@ -576,65 +672,72 @@ const RekberSimulation = () => {
           name="TRIGUARD AI ESCROW"
         />
       ),
-      text: 'Udah ya min, ke BCA.',
+      text: "Udah ya min, ke BCA.",
     },
     {
-      sender: 'System AI',
-      role: 'ai_action',
-      text: 'Verifikasi API Bank... Rp 2.100.000 Valid & Dibekukan di Brankas.',
+      sender: "System AI",
+      role: "ai_action",
+      text: "Verifikasi bank selesai. Dana Rp 2.100.000 aman di escrow.",
     },
     {
-      sender: 'TriGuard Bot',
-      role: 'admin',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
-      text: 'DANA DIAMANKAN\n\nPenjual (Dimas), silakan kirim barang melalui kurir dan wajib kirim nomor Resi di grup ini agar AI dapat melacaknya.',
+      sender: "TriGuard Bot",
+      role: "admin",
+      avatar:
+        "https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981",
+      text: "Dana sudah diamankan. Dimas, silakan kirim barang lewat kurir dan kirim nomor resi di grup supaya aku bisa lacak.",
     },
     {
-      sender: 'Dimas (Penjual)',
-      role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
-      text: 'Oke siap min, otw konter J&T.',
+      sender: "Dimas (Penjual)",
+      role: "seller",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf",
+      text: "Oke siap, aku antar ke J&T sekarang.",
     },
-    { type: 'system', text: '... 2 Jam Kemudian ...' },
+    { type: "system", text: "... 2 Jam Kemudian ..." },
     {
-      sender: 'Dimas (Penjual)',
-      role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
-      text: 'JNT001122334455\nItu resinya ya mas',
-    },
-    {
-      sender: 'System AI',
-      role: 'ai_action',
-      text: 'API J&T Connected. Melacak JNT001122334455...',
-    },
-    { type: 'system', text: '... 2 Hari Kemudian ...' },
-    {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
-      text: 'Barang udah sampai mas. Imei aman, fisik mulus sesuai.\n/done',
+      sender: "Dimas (Penjual)",
+      role: "seller",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf",
+      text: "JNT001122334455\nItu resinya ya mas",
     },
     {
-      sender: 'TriGuard Bot',
-      role: 'admin',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
-      text: 'KONFIRMASI DITERIMA\n\nAI mencatat Resi telah berstatus DELIVERED dan Pembeli setuju.\nSilakan Penjual (Dimas) ketik detail rekening pencairan:\n\nBank:\nNo Rekening:\nAtas Nama:',
+      sender: "System AI",
+      role: "ai_action",
+      text: "J&T terhubung. Lagi lacak JNT001122334455...",
+    },
+    { type: "system", text: "... 2 Hari Kemudian ..." },
+    {
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
+      text: "Barang udah sampai mas. Imei aman, fisik mulus sesuai.\n/done",
     },
     {
-      sender: 'Dimas (Penjual)',
-      role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
-      text: 'Seabank\n9988776655\nDimas Pratama',
+      sender: "TriGuard Bot",
+      role: "admin",
+      avatar:
+        "https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981",
+      text: "Konfirmasi sudah masuk. Resi terdeteksi delivered dan pembeli setuju. Silakan Dimas kirim detail rekening pencairan:\n\nBank:\nNo Rekening:\nAtas Nama:",
     },
     {
-      sender: 'System AI',
-      role: 'ai_action',
-      text: 'Mengecek OSINT Scraper untuk Rekening 9988776655... Bersih. Trust Score: 98%.',
+      sender: "Dimas (Penjual)",
+      role: "seller",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf",
+      text: "Seabank\n9988776655\nDimas Pratama",
     },
     {
-      sender: 'TriGuard Bot',
-      role: 'admin',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981',
+      sender: "System AI",
+      role: "ai_action",
+      text: "Lagi cek rekening 9988776655 lewat OSINT scraper... hasilnya bersih, trust score 98%.",
+    },
+    {
+      sender: "TriGuard Bot",
+      role: "admin",
+      avatar:
+        "https://api.dicebear.com/7.x/bottts/svg?seed=TriGuard&backgroundColor=10b981",
       attachment: (
         <BankReceipt
           type="out"
@@ -646,69 +749,79 @@ const RekberSimulation = () => {
           name="DIMAS PRATAMA"
         />
       ),
-      text: 'PENCAIRAN BERHASIL\n\nDana bersih Rp 2.000.000 sudah ditransfer. Terima kasih menggunakan TriGuard AI!',
+      text: "Pencairan berhasil. Dana bersih Rp 2.000.000 sudah dikirim ke penjual. Terima kasih sudah pakai TriGuard.",
     },
   ];
 
   const privateChatMessages = [
-    { type: 'system', text: 'Pesan diamankan dengan enkripsi end-to-end.' },
+    { type: "system", text: "Pesan diamankan dengan enkripsi end-to-end." },
     {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
-      text: 'Mas, jual iPhone 13 Pro? Ini masih?',
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
+      text: "Mas, jual iPhone 13 Pro? Ini masih?",
     },
     {
-      sender: 'Dimas (Penjual)',
-      role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
-      text: 'Halo mas, iya masih ready. Kelengkapan fullset ori, minus pemakaian aja dikit di bezel ya.',
+      sender: "Dimas (Penjual)",
+      role: "seller",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf",
+      text: "Halo mas, iya masih ready. Kelengkapan fullset ori, minus pemakaian aja dikit di bezel ya.",
     },
     {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
-      text: 'Imei aman kan ya ngga keblokir? Boleh liat videonya mas?',
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
+      text: "Imei aman kan ya ngga keblokir? Boleh liat videonya mas?",
     },
     {
-      sender: 'Dimas (Penjual)',
-      role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
-      text: 'Imei aman sentosa mas, ex inter tapi udah terdaftar bea cukai. (Mengirim Video 0:45)',
+      sender: "Dimas (Penjual)",
+      role: "seller",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf",
+      text: "Imei aman sentosa mas, ex inter tapi udah terdaftar bea cukai. (Mengirim Video 0:45)",
     },
     {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
-      text: 'Harga netnya berapa nih mas?',
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
+      text: "Harga netnya berapa nih mas?",
     },
     {
-      sender: 'Dimas (Penjual)',
-      role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
-      text: 'Ada yang nawar 1.8 kemaren ngga aku lepas. Udah pas aja 2 juta mas, murah meriah.',
+      sender: "Dimas (Penjual)",
+      role: "seller",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf",
+      text: "Ada yang nawar 1.8 kemaren ngga aku lepas. Udah pas aja 2 juta mas, murah meriah.",
     },
     {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
-      text: 'Oke 2jt aku gas. Tapi pakai rekber TriGuard AI ya mas biar sama-sama aman dan ngga ada transaksi segitiga.',
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
+      text: "Oke 2jt aku gas. Tapi pakai rekber TriGuard AI ya mas biar sama-sama aman dan ngga ada transaksi segitiga.",
     },
     {
-      sender: 'Dimas (Penjual)',
-      role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
-      text: 'Boleh mas, bebas. Biar enak juga. Ongkir sama admin rekbernya mas yang tanggung ya?',
+      sender: "Dimas (Penjual)",
+      role: "seller",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf",
+      text: "Boleh mas, bebas. Biar enak juga. Ongkir sama admin rekbernya mas yang tanggung ya?",
     },
     {
-      sender: 'Budi (Pembeli)',
-      role: 'buyer',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4',
-      text: 'Sip aman mas. Aku buatin grup bot rekbernya ya sekarang.',
+      sender: "Budi (Pembeli)",
+      role: "buyer",
+      avatar:
+        "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi&backgroundColor=b6e3f4",
+      text: "Sip aman mas. Aku buatin grup bot rekbernya ya sekarang.",
     },
   ];
 
-  const currentMessages = activeTab === 'group' ? groupChatMessages : privateChatMessages;
+  const currentMessages =
+    activeTab === "group" ? groupChatMessages : privateChatMessages;
 
   return (
     <section id="demo" className="relative bg-slate-950 py-24">
@@ -723,34 +836,34 @@ const RekberSimulation = () => {
           >
             <div className="relative z-10 mx-auto mb-6 flex w-fit flex-wrap justify-center gap-2 rounded-xl border border-white/5 bg-slate-800/80 p-1.5 backdrop-blur-sm">
               <button
-                onClick={() => setActiveTab('private')}
+                onClick={() => setActiveTab("private")}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'private'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  activeTab === "private"
+                    ? "bg-blue-600 text-white shadow-lg"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <User className="h-4 w-4" /> 1. Chat Pribadi
+                <User className="h-4 w-4" /> 1. Negosiasi Awal
               </button>
               <button
-                onClick={() => setActiveTab('group')}
+                onClick={() => setActiveTab("group")}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'group'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  activeTab === "group"
+                    ? "bg-blue-600 text-white shadow-lg"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <Bot className="h-4 w-4" /> 2. Grup AI
+                <Bot className="h-4 w-4" /> 2. Demo Utama /rekber
               </button>
               <button
-                onClick={() => setActiveTab('tracking')}
+                onClick={() => setActiveTab("tracking")}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'tracking'
-                    ? 'bg-emerald-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  activeTab === "tracking"
+                    ? "bg-emerald-600 text-white shadow-lg"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <Truck className="h-4 w-4" /> 3. Lacak Resi
+                <Truck className="h-4 w-4" /> 3. Demo Pendukung: Cek Resi
               </button>
             </div>
 
@@ -758,23 +871,25 @@ const RekberSimulation = () => {
               <div className="absolute top-3 left-1/2 z-20 h-7 w-32 -translate-x-1/2 rounded-b-3xl bg-slate-950" />
 
               <div className="relative flex h-[750px] flex-col overflow-hidden rounded-[2.5rem] bg-[#0f172a] transition-colors">
-                {activeTab === 'tracking' ? (
+                {activeTab === "tracking" ? (
                   <>
                     <div className="z-10 flex items-center gap-3 border-b border-white/10 bg-slate-900 px-6 pt-12 pb-4 shadow-sm">
                       <button
-                        onClick={() => setActiveTab('group')}
+                        onClick={() => setActiveTab("group")}
                         className="text-slate-400 hover:text-white"
                       >
                         <ChevronRight className="h-5 w-5 rotate-180" />
                       </button>
-                      <h3 className="text-sm font-bold text-white">Pelacakan Resi Kurir</h3>
+                      <h3 className="text-sm font-bold text-white">
+                        Demo Pendukung: Pelacakan Resi
+                      </h3>
                     </div>
                     <TrackingView />
                   </>
                 ) : (
                   <>
                     <div className="z-10 flex items-center gap-4 border-b border-white/10 bg-slate-900 px-6 pt-12 pb-4 shadow-sm">
-                      {activeTab === 'group' ? (
+                      {activeTab === "group" ? (
                         <>
                           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-emerald-400 bg-emerald-500">
                             <img
@@ -785,10 +900,11 @@ const RekberSimulation = () => {
                           </div>
                           <div>
                             <h3 className="w-48 truncate text-sm font-bold text-white">
-                              REKBER IPHONE 13 PRO
+                              Demo Utama /rekber
                             </h3>
                             <p className="flex items-center gap-1 text-xs text-emerald-400">
-                              <Bot className="h-3 w-3" /> TriGuard Bot (AI) Aktif
+                              <Bot className="h-3 w-3" /> TriGuard Bot (AI)
+                              Aktif
                             </p>
                           </div>
                         </>
@@ -805,7 +921,9 @@ const RekberSimulation = () => {
                             <h3 className="w-48 truncate text-sm font-bold text-white">
                               Dimas (Penjual)
                             </h3>
-                            <p className="flex items-center gap-1 text-xs text-slate-400">Online</p>
+                            <p className="flex items-center gap-1 text-xs text-slate-400">
+                              Online
+                            </p>
                           </div>
                         </>
                       )}
@@ -813,7 +931,7 @@ const RekberSimulation = () => {
 
                     <div className="custom-scrollbar flex-1 space-y-5 overflow-y-auto bg-[#0B1120] p-4 pb-20">
                       {currentMessages.map((msg, idx) => {
-                        if (msg.type === 'system') {
+                        if (msg.type === "system") {
                           return (
                             <div key={idx} className="my-2 flex justify-center">
                               <span className="max-w-[85%] rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-center text-[10px] leading-relaxed text-slate-400">
@@ -823,7 +941,7 @@ const RekberSimulation = () => {
                           );
                         }
 
-                        if (msg.role === 'ai_action') {
+                        if (msg.role === "ai_action") {
                           return (
                             <motion.div
                               variants={revealSoft}
@@ -841,18 +959,18 @@ const RekberSimulation = () => {
                           );
                         }
 
-                        const isAdmin = msg.role === 'admin';
-                        const isBuyer = msg.role === 'buyer';
+                        const isAdmin = msg.role === "admin";
+                        const isBuyer = msg.role === "buyer";
 
                         return (
                           <motion.div
                             variants={revealSoft}
                             initial="hidden"
                             whileInView="visible"
-                            viewport={{ ...viewportLoop, margin: '-50px' }}
+                            viewport={{ ...viewportLoop, margin: "-50px" }}
                             key={idx}
                             className={`flex w-full gap-3 ${
-                              isBuyer ? 'flex-row-reverse' : 'flex-row'
+                              isBuyer ? "flex-row-reverse" : "flex-row"
                             }`}
                           >
                             {msg.avatar && (
@@ -862,20 +980,22 @@ const RekberSimulation = () => {
                                   alt={msg.sender}
                                   className={`h-8 w-8 rounded-full border ${
                                     isAdmin
-                                      ? 'border-emerald-500 bg-emerald-900/50'
-                                      : 'border-slate-600 bg-slate-800'
+                                      ? "border-emerald-500 bg-emerald-900/50"
+                                      : "border-slate-600 bg-slate-800"
                                   }`}
                                 />
                               </div>
                             )}
                             <div
                               className={`flex max-w-[80%] flex-col ${
-                                isBuyer ? 'items-end' : 'items-start'
+                                isBuyer ? "items-end" : "items-start"
                               }`}
                             >
                               <span
                                 className={`mb-1 px-1 text-[10px] ${
-                                  isAdmin ? 'font-bold text-emerald-400' : 'text-slate-500'
+                                  isAdmin
+                                    ? "font-bold text-emerald-400"
+                                    : "text-slate-500"
                                 }`}
                               >
                                 {msg.sender}
@@ -883,13 +1003,17 @@ const RekberSimulation = () => {
                               <div
                                 className={`rounded-2xl p-3 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
                                   isBuyer
-                                    ? 'rounded-br-sm bg-blue-600 text-white'
+                                    ? "rounded-br-sm bg-blue-600 text-white"
                                     : isAdmin
-                                      ? 'rounded-bl-sm border border-emerald-500/30 bg-emerald-900/40 text-emerald-50 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
-                                      : 'rounded-bl-sm border border-slate-700 bg-slate-800 text-slate-200'
+                                      ? "rounded-bl-sm border border-emerald-500/30 bg-emerald-900/40 text-emerald-50 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                                      : "rounded-bl-sm border border-slate-700 bg-slate-800 text-slate-200"
                                 }`}
                               >
-                                {msg.attachment && <div className="group relative mb-2">{msg.attachment}</div>}
+                                {msg.attachment && (
+                                  <div className="group relative mb-2">
+                                    {msg.attachment}
+                                  </div>
+                                )}
                                 {msg.text}
                               </div>
                             </div>
@@ -902,9 +1026,9 @@ const RekberSimulation = () => {
                       <div className="flex items-center gap-3 rounded-full bg-slate-800 px-4 py-3">
                         <MessageSquare className="h-5 w-5 text-slate-500" />
                         <span className="text-sm text-slate-500">
-                          {activeTab === 'group'
-                            ? 'Ketik perintah seperti /rekber...'
-                            : 'Ketik pesan balasan...'}
+                          {activeTab === "group"
+                            ? "Ketik perintah seperti /rekber..."
+                            : "Ketik pesan balasan..."}
                         </span>
                       </div>
                     </div>
@@ -922,31 +1046,35 @@ const RekberSimulation = () => {
             className="order-1 lg:order-2 lg:w-1/2"
           >
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-400">
-              <MessageSquare className="h-4 w-4" /> Skenario Barang Fisik
+              <MessageSquare className="h-4 w-4" /> Demo Utama: /rekber
             </div>
             <h2 className="mb-6 text-3xl font-bold text-white md:text-4xl">
-              Automasi Berbasis Command & Lacak API Ekspedisi
+              Alur Utama Transaksi: Dari /rekber Sampai Dana Cair
             </h2>
             <p className="mb-8 leading-relaxed text-slate-400">
-              Mulai dari negosiasi, pembayaran via Bot Escrow, hingga{' '}
-              <strong>Pelacakan Paket Otomatis</strong> terhubung langsung ke API
-              logistik (JNE, J&T).
+              Demo ini memperlihatkan alur utama TriGuard AI: mulai dari
+              perintah
+              <strong> /rekber</strong>, lanjut ke pembayaran escrow, lalu
+              diteruskan ke demo pendukung untuk cek resi dan blacklist
+              rekening.
             </p>
 
             <div className="space-y-6">
               <div
                 className="cursor-pointer rounded-xl border border-white/5 bg-slate-800/50 p-4 transition-colors hover:bg-slate-800"
-                onClick={() => setActiveTab('private')}
+                onClick={() => setActiveTab("private")}
               >
                 <div className="flex items-start gap-4">
                   <div className="rounded-lg bg-blue-500/20 p-3 text-blue-400">
                     <User className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="mb-1 font-semibold text-white">1. Negosiasi Alami</h4>
+                    <h4 className="mb-1 font-semibold text-white">
+                      1. Negosiasi Alami
+                    </h4>
                     <p className="text-sm text-slate-400">
-                      Pembeli dan Penjual bernegosiasi kondisi barang, garansi, dan
-                      harga di obrolan pribadi mereka terlebih dahulu.
+                      Demo pendukung untuk lihat obrolan awal sebelum rekber
+                      dimulai.
                     </p>
                   </div>
                 </div>
@@ -954,17 +1082,19 @@ const RekberSimulation = () => {
 
               <div
                 className="cursor-pointer rounded-xl border border-white/5 bg-slate-800/50 p-4 transition-colors hover:bg-slate-800"
-                onClick={() => setActiveTab('group')}
+                onClick={() => setActiveTab("group")}
               >
                 <div className="flex items-start gap-4">
                   <div className="rounded-lg bg-emerald-500/20 p-3 text-emerald-400">
                     <Bot className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="mb-1 font-semibold text-white">2. Eksekusi Bot (/rekber)</h4>
+                    <h4 className="mb-1 font-semibold text-white">
+                      2. Demo Utama: /rekber
+                    </h4>
                     <p className="text-sm text-slate-400">
-                      AI Escrow merespons command, menjumlahkan harga (2jt) + admin
-                      rekber (100rb) dan otomatis memverifikasi mutasi bank yang masuk.
+                      AI Escrow merespons command, menjumlahkan harga + admin,
+                      lalu menampilkan rincian transaksi secara rapi.
                     </p>
                   </div>
                 </div>
@@ -972,18 +1102,19 @@ const RekberSimulation = () => {
 
               <div
                 className="cursor-pointer rounded-xl border border-white/5 bg-slate-800/50 p-4 transition-colors hover:bg-slate-800"
-                onClick={() => setActiveTab('tracking')}
+                onClick={() => setActiveTab("tracking")}
               >
                 <div className="flex items-start gap-4">
                   <div className="rounded-lg bg-orange-500/20 p-3 text-orange-400">
                     <Truck className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="mb-1 font-semibold text-white">3. Integrasi API Kurir</h4>
+                    <h4 className="mb-1 font-semibold text-white">
+                      3. Demo Pendukung: Cek Resi
+                    </h4>
                     <p className="text-sm text-slate-400">
-                      Penjual tidak bisa menipu dengan resi palsu. AI langsung membaca
-                      API Kurir untuk memastikan resi valid dan paket benar-benar
-                      bergerak.
+                      AI membaca API kurir untuk memastikan resi valid dan paket
+                      benar-benar bergerak.
                     </p>
                   </div>
                 </div>
@@ -1017,9 +1148,9 @@ const HowItWorks = () => {
             Mencegah Transaksi Segitiga dari Akar
           </h2>
           <p className="leading-relaxed text-slate-400 md:text-lg">
-            Dana, identitas, dan pengiriman divalidasi dalam satu alur yang rapi.
-            TriGuard AI bertindak sebagai penengah digital agar pembeli dan penjual
-            sama-sama aman dari awal transaksi sampai dana cair.
+            Dana, identitas, dan pengiriman divalidasi dalam satu alur yang
+            rapi. TriGuard AI bertindak sebagai penengah digital agar pembeli
+            dan penjual sama-sama aman dari awal transaksi sampai dana cair.
           </p>
         </motion.div>
 
@@ -1075,10 +1206,10 @@ const HowItWorks = () => {
               Semua lapisan keamanan tampil langsung di aplikasi
             </h3>
             <p className="max-w-2xl leading-relaxed text-slate-400">
-              Saat proteksi aktif, nasabah bisa melihat status escrow, verifikasi
-              identitas, dan pemantauan resi dalam satu tampilan yang terasa hidup.
-              Efek animasinya juga ikut bergerak lagi saat section ini masuk viewport
-              dari bawah maupun dari atas.
+              Saat proteksi aktif, nasabah bisa melihat status escrow,
+              verifikasi identitas, dan pemantauan resi dalam satu tampilan yang
+              terasa hidup. Efek animasinya juga ikut bergerak lagi saat section
+              ini masuk viewport dari bawah maupun dari atas.
             </p>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -1088,7 +1219,8 @@ const HowItWorks = () => {
                 </div>
                 <h4 className="mb-2 font-semibold text-white">Escrow Aktif</h4>
                 <p className="text-sm leading-relaxed text-slate-300">
-                  Dana dibekukan sampai sistem mendeteksi syarat transaksi terpenuhi.
+                  Dana dibekukan sampai sistem mendeteksi syarat transaksi
+                  terpenuhi.
                 </p>
               </div>
 
@@ -1098,7 +1230,8 @@ const HowItWorks = () => {
                 </div>
                 <h4 className="mb-2 font-semibold text-white">OSINT Check</h4>
                 <p className="text-sm leading-relaxed text-slate-300">
-                  Rekening dan identitas penerima dicek dulu sebelum pencairan terjadi.
+                  Rekening dan identitas penerima dicek dulu sebelum pencairan
+                  terjadi.
                 </p>
               </div>
 
@@ -1108,7 +1241,8 @@ const HowItWorks = () => {
                 </div>
                 <h4 className="mb-2 font-semibold text-white">Tracking Live</h4>
                 <p className="text-sm leading-relaxed text-slate-300">
-                  Resi kurir dipantau terus sampai paket benar-benar diterima pembeli.
+                  Resi kurir dipantau terus sampai paket benar-benar diterima
+                  pembeli.
                 </p>
               </div>
             </div>
@@ -1150,28 +1284,36 @@ const HowItWorks = () => {
                     <div className="relative mb-2 h-24 w-24 [perspective:1000px]">
                       <motion.div
                         animate={
-                          isProtected ? { rotateY: 360, rotateX: 360 } : { rotateY: 0, rotateX: 0 }
+                          isProtected
+                            ? { rotateY: 360, rotateX: 360 }
+                            : { rotateY: 0, rotateX: 0 }
                         }
                         transition={
                           isProtected
-                            ? { duration: 15, repeat: Infinity, ease: 'linear' }
+                            ? { duration: 15, repeat: Infinity, ease: "linear" }
                             : { duration: 0.5 }
                         }
                         className="relative h-full w-full [transform-style:preserve-3d]"
                       >
                         <div
                           className={`absolute inset-0 rounded-full border-[3px] [transform:rotateX(0deg)] transition-colors duration-500 ${
-                            isProtected ? 'border-blue-500/60' : 'border-slate-700'
+                            isProtected
+                              ? "border-blue-500/60"
+                              : "border-slate-700"
                           }`}
                         />
                         <div
                           className={`absolute inset-0 rounded-full border-[3px] [transform:rotateX(60deg)] transition-colors duration-500 ${
-                            isProtected ? 'border-purple-500/60' : 'border-slate-700'
+                            isProtected
+                              ? "border-purple-500/60"
+                              : "border-slate-700"
                           }`}
                         />
                         <div
                           className={`absolute inset-0 rounded-full border-[3px] [transform:rotateX(120deg)] transition-colors duration-500 ${
-                            isProtected ? 'border-cyan-500/60' : 'border-slate-700'
+                            isProtected
+                              ? "border-cyan-500/60"
+                              : "border-slate-700"
                           }`}
                         />
                         <div className="absolute inset-0 m-3 flex items-center justify-center rounded-full border border-white/10 bg-slate-900/50 backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.5)]">
@@ -1188,8 +1330,8 @@ const HowItWorks = () => {
                   <div
                     className={`relative overflow-hidden rounded-2xl border p-5 transition-all duration-500 ${
                       isProtected
-                        ? 'border-blue-500/50 bg-blue-900/20 shadow-[0_0_30px_rgba(59,130,246,0.15)]'
-                        : 'border-white/10 bg-white/5'
+                        ? "border-blue-500/50 bg-blue-900/20 shadow-[0_0_30px_rgba(59,130,246,0.15)]"
+                        : "border-white/10 bg-white/5"
                     }`}
                   >
                     <AnimatePresence>
@@ -1209,8 +1351,8 @@ const HowItWorks = () => {
                           <div
                             className={`rounded-xl border p-2 transition-colors ${
                               isProtected
-                                ? 'border-blue-400 bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-                                : 'border-slate-700 bg-slate-800 text-slate-500'
+                                ? "border-blue-400 bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                                : "border-slate-700 bg-slate-800 text-slate-500"
                             }`}
                           >
                             <Brain className="h-5 w-5" />
@@ -1222,7 +1364,9 @@ const HowItWorks = () => {
                             <div className="mt-0.5 flex items-center gap-1">
                               <span
                                 className={`h-1.5 w-1.5 rounded-full ${
-                                  isProtected ? 'animate-pulse bg-blue-400' : 'bg-slate-600'
+                                  isProtected
+                                    ? "animate-pulse bg-blue-400"
+                                    : "bg-slate-600"
                                 }`}
                               />
                               <p className="text-[9px] font-medium uppercase tracking-widest text-slate-400">
@@ -1236,27 +1380,27 @@ const HowItWorks = () => {
                           onClick={() => setIsProtected(!isProtected)}
                           className={`flex h-6 w-11 cursor-pointer items-center rounded-full border p-1 shadow-inner transition-all duration-300 ${
                             isProtected
-                              ? 'justify-end border-blue-500 bg-blue-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]'
-                              : 'justify-start border-slate-700 bg-slate-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]'
+                              ? "justify-end border-blue-500 bg-blue-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]"
+                              : "justify-start border-slate-700 bg-slate-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]"
                           }`}
                         >
                           <motion.div
                             layout
                             className={`h-4 w-4 rounded-full shadow-md ${
                               isProtected
-                                ? 'bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]'
-                                : 'bg-slate-400'
+                                ? "bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+                                : "bg-slate-400"
                             }`}
                           />
                         </button>
                       </div>
                       <p
                         className={`text-[10px] leading-relaxed transition-colors duration-300 ${
-                          isProtected ? 'text-blue-100' : 'text-slate-500'
+                          isProtected ? "text-blue-100" : "text-slate-500"
                         }`}
                       >
-                        Sistem Rekening Bersama berbasis AI menahan dana sampai status
-                        transaksi dan logistik benar-benar valid.
+                        Sistem Rekening Bersama berbasis AI menahan dana sampai
+                        status transaksi dan logistik benar-benar valid.
                       </p>
                     </div>
                   </div>
@@ -1264,8 +1408,8 @@ const HowItWorks = () => {
                   <div
                     className={`relative flex items-center gap-4 overflow-hidden rounded-2xl border p-4 transition-all duration-500 ${
                       isProtected
-                        ? 'border-emerald-500/50 bg-emerald-900/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
-                        : 'border-white/10 bg-white/5 opacity-50 grayscale'
+                        ? "border-emerald-500/50 bg-emerald-900/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+                        : "border-white/10 bg-white/5 opacity-50 grayscale"
                     }`}
                   >
                     <div className="z-10 flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400 bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
@@ -1275,10 +1419,12 @@ const HowItWorks = () => {
                       <p className="mb-0.5 text-[10px] uppercase tracking-wider text-slate-400">
                         Verifikasi Identitas AI
                       </p>
-                      <p className="text-sm font-bold text-white">2. Cek Real-Time</p>
+                      <p className="text-sm font-bold text-white">
+                        2. Cek Real-Time
+                      </p>
                       <p className="mt-0.5 text-xs text-emerald-100">
-                        Sistem mencocokkan identitas pengirim dan memindai riwayat
-                        penipuan sebelum dana diteruskan.
+                        Sistem mencocokkan identitas pengirim dan memindai
+                        riwayat penipuan sebelum dana diteruskan.
                       </p>
                     </div>
                   </div>
@@ -1286,16 +1432,16 @@ const HowItWorks = () => {
                   <div
                     className={`relative overflow-hidden rounded-2xl border p-4 transition-all duration-500 ${
                       isProtected
-                        ? 'border-purple-500/50 bg-purple-900/20 shadow-[0_0_20px_rgba(168,85,247,0.1)]'
-                        : 'border-white/10 bg-white/5 opacity-50 grayscale'
+                        ? "border-purple-500/50 bg-purple-900/20 shadow-[0_0_20px_rgba(168,85,247,0.1)]"
+                        : "border-white/10 bg-white/5 opacity-50 grayscale"
                     }`}
                   >
                     <div className="relative z-10 mb-2 flex items-center gap-3">
                       <div
                         className={`rounded-lg border p-1.5 ${
                           isProtected
-                            ? 'border-purple-400 bg-purple-500/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
-                            : 'border-slate-700 bg-slate-800 text-slate-500'
+                            ? "border-purple-400 bg-purple-500/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+                            : "border-slate-700 bg-slate-800 text-slate-500"
                         }`}
                       >
                         <Package className="h-4 w-4" />
@@ -1311,11 +1457,11 @@ const HowItWorks = () => {
                     </div>
                     <p
                       className={`relative z-10 text-[10px] leading-relaxed ${
-                        isProtected ? 'text-purple-100' : 'text-slate-500'
+                        isProtected ? "text-purple-100" : "text-slate-500"
                       }`}
                     >
-                      AI memantau pergerakan fisik barang sampai status delivered
-                      terkonfirmasi oleh sistem dan pembeli.
+                      AI memantau pergerakan fisik barang sampai status
+                      delivered terkonfirmasi oleh sistem dan pembeli.
                     </p>
                     {isProtected && (
                       <div className="absolute right-[-10px] bottom-[-10px] opacity-10">
@@ -1330,8 +1476,8 @@ const HowItWorks = () => {
                     onClick={() => setIsProtected(!isProtected)}
                     className={`group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl border py-4 text-sm font-bold transition-all duration-300 ${
                       isProtected
-                        ? 'border-blue-400/50 bg-blue-600/80 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]'
-                        : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                        ? "border-blue-400/50 bg-blue-600/80 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]"
+                        : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                     }`}
                   >
                     {isProtected && (
@@ -1344,7 +1490,9 @@ const HowItWorks = () => {
                       <Lock className="relative z-10 h-4 w-4" />
                     )}
                     <span className="relative z-10 tracking-wide">
-                      {isProtected ? 'Sistem Proteksi Aktif' : 'Aktifkan Proteksi AI'}
+                      {isProtected
+                        ? "Sistem Proteksi Aktif"
+                        : "Aktifkan Proteksi AI"}
                     </span>
                   </button>
                 </div>
@@ -1398,8 +1546,8 @@ const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm font-medium text-slate-300"
           >
-            <Bot className="h-4 w-4 text-blue-400" /> API Rekber Otomatis Pertama di
-            Indonesia
+            <Bot className="h-4 w-4 text-blue-400" /> API Rekber Otomatis
+            Pertama di Indonesia
           </motion.div>
 
           <motion.h1
@@ -1408,7 +1556,7 @@ const Hero = () => {
             transition={{ delay: 0.1 }}
             className="mb-6 max-w-4xl text-5xl font-bold tracking-tight text-white md:text-7xl"
           >
-            Akhiri Penipuan Online dengan{' '}
+            Akhiri Penipuan Online dengan{" "}
             <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               AI Escrow
             </span>
@@ -1420,9 +1568,9 @@ const Hero = () => {
             transition={{ delay: 0.2 }}
             className="mb-10 max-w-2xl text-lg leading-relaxed text-slate-400 md:text-xl"
           >
-            Sistem Rekening Bersama (Rekber) berbasis AI yang menahan dana transaksi
-            di brankas digital secara otomatis sampai barang (HP, dsb) tiba dengan
-            selamat di tangan pembeli via Lacak Resi.
+            Sistem Rekening Bersama (Rekber) berbasis AI yang menahan dana
+            transaksi di brankas digital secara otomatis sampai barang (HP, dsb)
+            tiba dengan selamat di tangan pembeli via Lacak Resi.
           </motion.p>
 
           <motion.div
@@ -1454,7 +1602,7 @@ const Hero = () => {
             <div className="relative h-48 w-48 [perspective:1000px]">
               <motion.div
                 animate={{ rotateY: 360, rotateX: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 className="relative h-full w-full [transform-style:preserve-3d]"
               >
                 <div className="absolute inset-0 rounded-full border-4 border-blue-500/50 [transform:rotateX(0deg)]" />
@@ -1475,7 +1623,9 @@ const Hero = () => {
               </div>
             </div>
             <div className="absolute top-6 right-6 rounded-2xl border border-white/5 bg-slate-950/80 p-4 backdrop-blur-sm">
-              <span className="mb-1 block text-xs text-slate-400">Dana Ditahan Aman</span>
+              <span className="mb-1 block text-xs text-slate-400">
+                Dana Ditahan Aman
+              </span>
               <span className="text-xl font-bold text-white">Rp 2.4M+</span>
             </div>
           </motion.div>
@@ -1489,18 +1639,18 @@ const Solutions = () => {
   const features = [
     {
       icon: <Lock className="h-6 w-6 text-blue-400" />,
-      title: 'Smart Escrow',
-      desc: 'Dana ditahan secara aman di brankas digital sampai pembeli menerima dan mengonfirmasi barang pesanannya.',
+      title: "Smart Escrow",
+      desc: "Dana ditahan secara aman di brankas digital sampai pembeli menerima dan mengonfirmasi barang pesanannya.",
     },
     {
       icon: <Fingerprint className="h-6 w-6 text-emerald-400" />,
-      title: 'Verifikasi Identitas AI',
-      desc: 'Sistem mencocokkan identitas pengirim dan memindai riwayat penipuan (OSINT) untuk memastikan keamanan total.',
+      title: "Verifikasi Identitas AI",
+      desc: "Sistem mencocokkan identitas pengirim dan memindai riwayat penipuan (OSINT) untuk memastikan keamanan total.",
     },
     {
       icon: <Package className="h-6 w-6 text-purple-400" />,
-      title: 'Lacak Resi Otomatis',
-      desc: 'AI terkoneksi dengan API Kurir (J&T, JNE, dll) untuk mendeteksi nomor resi dan memantau pergerakan fisik barang.',
+      title: "Lacak Resi Otomatis",
+      desc: "AI terkoneksi dengan API Kurir (J&T, JNE, dll) untuk mendeteksi nomor resi dan memantau pergerakan fisik barang.",
     },
   ];
 
@@ -1518,8 +1668,8 @@ const Solutions = () => {
             Solusi Menyeluruh TriGuard AI
           </h2>
           <p className="mx-auto max-w-2xl text-slate-400">
-            Kami menggabungkan perlindungan perbankan dengan kecepatan bot otomasi
-            untuk memfasilitasi transaksi C2C (Konsumen ke Konsumen).
+            Kami menggabungkan perlindungan perbankan dengan kecepatan bot
+            otomasi untuk memfasilitasi transaksi C2C (Konsumen ke Konsumen).
           </p>
         </motion.div>
 
@@ -1537,7 +1687,9 @@ const Solutions = () => {
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5">
                 {feat.icon}
               </div>
-              <h3 className="mb-3 text-xl font-bold text-white">{feat.title}</h3>
+              <h3 className="mb-3 text-xl font-bold text-white">
+                {feat.title}
+              </h3>
               <p className="leading-relaxed text-slate-400">{feat.desc}</p>
             </motion.div>
           ))}
@@ -1557,7 +1709,9 @@ const Footer = () => {
             TriGuard<span className="text-blue-500">AI</span>
           </span>
         </div>
-        <p className="text-sm text-slate-500">© 2026 TriGuard AI. Prototype for Hackathon.</p>
+        <p className="text-sm text-slate-500">
+          © 2026 TriGuard AI. Prototype for Hackathon.
+        </p>
         <div className="flex gap-4 text-sm text-slate-400">
           <a href="#cara-kerja" className="hover:text-white">
             Cara Kerja
@@ -1575,16 +1729,16 @@ const AIChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
-      role: 'model',
-      text: 'Halo! Saya AI Assistant TriGuard. Ingin tahu lebih detail tentang bagaimana bot Rekber kami merespons command otomatis dan melacak resi pengiriman?',
+      role: "model",
+      text: "Halo, aku asisten TriGuard. Kalau kamu mau, aku bisa jelasin cara bot Rekber membaca resi, cek mutasi, atau mulai lewat /rekber.",
     },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = async (event) => {
@@ -1595,43 +1749,51 @@ const AIChatbot = () => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     const apiUrl = import.meta.env.VITE_GEMINI_API_URL;
 
-    setInput('');
-    setMessages((prev) => [...prev, { role: 'user', text: userText }]);
+    setInput("");
+    setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setIsLoading(true);
 
     try {
       if (!apiKey || !apiUrl) {
         await new Promise((resolve) => setTimeout(resolve, 700));
-        setMessages((prev) => [...prev, { role: 'model', text: buildFallbackReply(userText) }]);
+        setMessages((prev) => [
+          ...prev,
+          { role: "model", text: buildFallbackReply(userText) },
+        ]);
         return;
       }
 
       const formattedHistory = messages.map((msg) => ({
-        role: msg.role === 'model' ? 'model' : 'user',
+        role: msg.role === "model" ? "model" : "user",
         parts: [{ text: msg.text }],
       }));
 
       const payload = {
-        contents: [...formattedHistory, { role: 'user', parts: [{ text: userText }] }],
+        contents: [
+          ...formattedHistory,
+          { role: "user", parts: [{ text: userText }] },
+        ],
         systemInstruction: {
           parts: [
             {
-              text: 'Anda adalah Asisten AI untuk TriGuard AI, sistem bot Rekber Escrow otomatis. Jelaskan bahwa AI ini dapat melacak resi pengiriman, membaca mutasi bank, dan dipanggil lewat chat command seperti /rekber. Jawab singkat dan profesional.',
+              text: "Anda adalah asisten TriGuard AI. Jawab dengan bahasa Indonesia yang hangat, natural, dan jelas. Tetap singkat, tetapi terdengar seperti orang yang membantu, bukan template. Boleh memakai sapaan ringan seperlunya. Jelaskan bahwa sistem ini bisa melacak resi, membaca mutasi bank, dan dipanggil lewat command seperti /rekber. Hindari bahasa yang terlalu kaku, terlalu teknis, atau berulang.",
             },
           ],
         },
       };
 
-      const endpoint = apiUrl.includes('?') ? `${apiUrl}&key=${apiKey}` : `${apiUrl}?key=${apiKey}`;
+      const endpoint = apiUrl.includes("?")
+        ? `${apiUrl}&key=${apiKey}`
+        : `${apiUrl}?key=${apiKey}`;
 
       const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error('Failed request');
+        throw new Error("Failed request");
       }
 
       const data = await response.json();
@@ -1639,10 +1801,16 @@ const AIChatbot = () => {
 
       setMessages((prev) => [
         ...prev,
-        { role: 'model', text: modelReply || 'Sistem AI sedang memuat ulang. Mohon coba lagi.' },
+        {
+          role: "model",
+          text: modelReply || "Sistem AI sedang memuat ulang. Mohon coba lagi.",
+        },
       ]);
     } catch {
-      setMessages((prev) => [...prev, { role: 'model', text: buildFallbackReply(userText) }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "model", text: buildFallbackReply(userText) },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -1655,7 +1823,7 @@ const AIChatbot = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className={`fixed right-6 bottom-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition-opacity ${
-          isOpen ? 'pointer-events-none opacity-0' : 'opacity-100'
+          isOpen ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
         <Bot className="h-6 w-6" />
@@ -1667,7 +1835,7 @@ const AIChatbot = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             className="fixed right-6 bottom-6 z-50 flex h-[500px] w-full max-w-[350px] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl"
-            style={{ maxHeight: 'calc(100vh - 100px)' }}
+            style={{ maxHeight: "calc(100vh - 100px)" }}
           >
             <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-800 p-4 text-white">
               <div className="flex items-center gap-3">
@@ -1675,10 +1843,12 @@ const AIChatbot = () => {
                   <Bot className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold">TriGuard AI</h3>
+                  <h3 className="text-sm font-bold">Tanya Cepat TriGuard</h3>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
-                    <span className="text-[10px] text-blue-100">Live Support</span>
+                    <span className="text-[10px] text-blue-100">
+                      Quick Support
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1691,12 +1861,15 @@ const AIChatbot = () => {
             </div>
             <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-slate-950 p-4">
               {messages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  key={idx}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'rounded-br-sm bg-blue-600 text-white'
-                        : 'rounded-bl-sm border border-slate-700 bg-slate-800 text-slate-200'
+                    className={`max-w-[85%] rounded-2xl whitespace-pre-wrap p-3 text-sm leading-relaxed ${
+                      msg.role === "user"
+                        ? "rounded-br-sm bg-blue-600 text-white"
+                        : "rounded-bl-sm border border-slate-700 bg-slate-800 text-slate-200"
                     }`}
                   >
                     {msg.text}
@@ -1709,23 +1882,26 @@ const AIChatbot = () => {
                     <span className="h-2 w-2 animate-bounce rounded-full bg-slate-500"></span>
                     <span
                       className="h-2 w-2 animate-bounce rounded-full bg-slate-500"
-                      style={{ animationDelay: '0.2s' }}
+                      style={{ animationDelay: "0.2s" }}
                     ></span>
                     <span
                       className="h-2 w-2 animate-bounce rounded-full bg-slate-500"
-                      style={{ animationDelay: '0.4s' }}
+                      style={{ animationDelay: "0.4s" }}
                     ></span>
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
-            <form onSubmit={handleSend} className="flex gap-2 border-t border-slate-800 bg-slate-900 p-3">
+            <form
+              onSubmit={handleSend}
+              className="flex gap-2 border-t border-slate-800 bg-slate-900 p-3"
+            >
               <input
                 type="text"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="Tanya sesuatu ke AI..."
+                placeholder="Tanya cepat soal /rekber, resi, mutasi..."
                 className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white transition-colors focus:border-blue-500 focus:outline-none"
               />
               <button
