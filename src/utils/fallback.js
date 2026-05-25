@@ -43,6 +43,14 @@ export function buildFallbackReply(prompt) {
     return `Untuk cek resi, kirim nomor resi kamu, misalnya: JNT001122334455. Saya akan coba cek status pengiriman.`;
   }
 
+  if (text.includes("lapor") || text.includes("laporan")) {
+    return `Untuk melaporkan rekening penipu, buka bagian "Lapor Penipu". Isi nomor rekening, nama pemilik, kronologi, lalu tambahkan bukti foto atau URL postingan publik agar tim bisa review.`;
+  }
+
+  if (text.includes("cek") && (text.includes("rekening") || /\b\d{6,}\b/.test(text))) {
+    return `Untuk cek rekening, buka bagian "Cek Blacklist" lalu masukkan nomor rekening. Untuk demo, coba 9988776655 sebagai aman atau 1234567890 sebagai berisiko.`;
+  }
+
   if (text.includes("mutasi") || text.includes("mutasi bank")) {
     return `Untuk baca mutasi, unggah screenshot atau tuliskan baris mutasi, saya akan bantu ringkas transaksi masuk/keluar.`;
   }

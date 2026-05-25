@@ -27,6 +27,8 @@ import {
 import { sendMessage } from "./services/aiService";
 import { classifyIntent } from "./utils/intentRouter";
 import { buildFallbackReply } from "./utils/fallback";
+import AdminOsintCandidates from "./components/AdminOsintCandidates";
+import ReportCenter from "./components/ReportCenter";
 
 const steps = [
   {
@@ -365,10 +367,6 @@ const AccountChecker = () => {
           <h2 className="mb-6 text-3xl font-bold text-white md:text-5xl">
             Cek Rekening Sebelum Transaksi
           </h2>
-          <p className="text-lg text-slate-400">
-            Cocok sebagai demo pendukung untuk lihat status rekening, trust
-            score, dan sinyal risiko sebelum lanjut ke proses rekber utama.
-          </p>
         </motion.div>
 
         <motion.div
@@ -1131,12 +1129,6 @@ const HowItWorks = () => {
             <h3 className="mb-4 text-3xl font-bold text-white">
               Semua lapisan keamanan tampil langsung di aplikasi
             </h3>
-            <p className="max-w-2xl leading-relaxed text-slate-400">
-              Saat proteksi aktif, nasabah bisa melihat status escrow,
-              verifikasi identitas, dan pemantauan resi dalam satu tampilan yang
-              terasa hidup. Efek animasinya juga ikut bergerak lagi saat section
-              ini masuk viewport dari bawah maupun dari atas.
-            </p>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-5">
@@ -1451,6 +1443,9 @@ const Header = () => (
         <a href="#cek-rekening" className="transition-colors hover:text-white">
           Cek Blacklist
         </a>
+        <a href="#lapor" className="transition-colors hover:text-white">
+          Lapor Penipu
+        </a>
         <a href="#demo" className="transition-colors hover:text-white">
           Simulasi Chat
         </a>
@@ -1708,7 +1703,7 @@ const AIChatbot = () => {
         ...prev,
         { role: "model", text: modelReply },
       ]);
-    } catch (e) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         { role: "model", text: buildFallbackReply(userText) },
@@ -1816,6 +1811,13 @@ const AIChatbot = () => {
 };
 
 export default function App() {
+  const isAdminOsintPage =
+    typeof window !== "undefined" && window.location.pathname === "/admin/osint-candidates";
+
+  if (isAdminOsintPage) {
+    return <AdminOsintCandidates />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 selection:bg-blue-500/30">
       <Header />
@@ -1824,6 +1826,7 @@ export default function App() {
         <Solutions />
         <HowItWorks />
         <AccountChecker />
+        <ReportCenter />
         <RekberSimulation />
       </main>
       <Footer />

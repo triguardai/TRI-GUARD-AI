@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tri-guard-ai.vercel.app/sitemap.xml
