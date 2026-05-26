@@ -205,36 +205,17 @@ export const validateReportInput = (report) => {
 
 export const getStoredReports = () => readStoredReports();
 
-async function uploadReportFiles(reportId, files) {
-  if (!files || files.length === 0) return [];
-
-  const formData = new FormData();
-  formData.append('reportId', reportId);
-  files.forEach((file, index) => {
-    formData.append(`file${index}`, file);
-  });
-
-  try {
-    const response = await fetch('/api/report-file-upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      console.warn('Gagal mengunggah file bukti ke server.');
-      return [];
-    }
-
-    const data = await response.json();
-    return data.files || [];
-  } catch (error) {
-    console.error('File upload fetch error:', error);
-    return [];
-  }
-}
+const buildImageManifest = (files) =>
+  Array.isArray(files)
+    ? files.map((file) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      }))
+    : [];
 
 export async function submitReport(input) {
-  const { evidenceFiles, ...restInput } = input;
+  const { evidenceFiles, base64Images, ...restInput } = input;
   const errors = validateReportInput(input);
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
@@ -242,11 +223,14 @@ export async function submitReport(input) {
 
   const handleMockFallback = () => {
     console.warn('Backend DB not configured or API failed. Using local storage mock for prototype.');
+    const imageManifest = buildImageManifest(evidenceFiles);
     const mockReport = { 
       id: buildCaseId(), 
       status: 'pending_review', 
       created_at: new Date().toISOString(),
-      ...input 
+      ...restInput,
+      base64Images: base64Images || [],
+      evidenceFiles: imageManifest,
     };
     const nextReports = [mockReport, ...readStoredReports()].slice(0, 12);
     writeStoredReports(nextReports);
@@ -254,10 +238,14 @@ export async function submitReport(input) {
   };
 
   try {
+    const imageManifest = buildImageManifest(evidenceFiles);
     const response = await fetch('/api/reports', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(restInput),
+      body: JSON.stringify({
+        ...restInput,
+        base64Images: imageManifest,
+      }),
     });
 
     if (!response.ok) {
@@ -271,17 +259,11 @@ export async function submitReport(input) {
     }
 
     const { report } = await response.json();
-    
-    // Upload files if report was successfully created in Supabase
-    let uploadedFiles = [];
-    if (report && report.id && evidenceFiles?.length > 0) {
-      uploadedFiles = await uploadReportFiles(report.id, evidenceFiles);
-    }
 
-    // Include uploaded file URLs in the object saved to local storage for immediate admin preview
     const reportWithFiles = {
       ...report,
-      base64Images: uploadedFiles.map(f => f.file_url)
+      base64Images: base64Images || [],
+      evidenceFiles: imageManifest,
     };
 
     const nextReports = [reportWithFiles, ...readStoredReports()].slice(0, 12);

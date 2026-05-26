@@ -96,9 +96,10 @@ npm run build
 
 Data laporan komunitas dan database rekening berisiko saat ini sudah terintegrasi dengan **Supabase** jika variabel lingkungan dikonfigurasi. Jika database belum siap, sistem secara otomatis menggunakan **localStorage** browser sebagai *fallback* demo agar prototipe tetap berjalan. 
 
+Untuk mode prototype saat ini, laporan dengan bukti foto tidak bergantung pada storage upload server. Frontend mengirim manifest metadata file agar submit tetap lolos validasi backend, sementara preview gambar tetap disimpan di browser untuk kebutuhan demo admin review.
+
 Sebelum benar-benar *live* untuk publik, pastikan untuk:
 - Mengaktifkan Row Level Security (RLS) di Supabase.
 - Menggunakan autentikasi admin yang lebih ketat (bukan hanya token statis).
 - Melakukan enkripsi pada data sensitif di tingkat database.
 - Memiliki proses verifikasi manual yang ketat sebelum memvonis rekening sebagai penipu.
-
