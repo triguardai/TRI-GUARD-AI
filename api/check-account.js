@@ -42,7 +42,9 @@ export default async function handler(req, res) {
   }
 
   const normalizedAccountNumber = String(accountNumber).replace(/\D/g, '');
-  const normalizedBank = String(bank || '').trim().toUpperCase();
+  const normalizedBank = String(bank || '')
+    .trim()
+    .toUpperCase();
 
   try {
     let query = supabase

@@ -6,7 +6,7 @@ Landing page prototype untuk TriGuard AI, solusi AI escrow untuk membantu menceg
 
 - Landing page AI escrow dan simulasi alur `/rekber`
 - Cek database rekening berisiko berbasis data demo
-- Pusat laporan komunitas untuk melaporkan rekening penipu
+- Pusat laporan komunitas untuk mengirim laporan kandidat rekening berisiko
 - Upload bukti foto dan URL postingan publik
 - Scraping otomatis OSINT dork lintas platform publik via Brave Search API atau Google CSE
 - Endpoint `/api/scrape-evidence` untuk mengambil metadata, excerpt, dan kandidat rekening dari URL bukti
@@ -94,12 +94,13 @@ npm run build
 
 ## Catatan Keamanan
 
-Data laporan komunitas dan database rekening berisiko saat ini sudah terintegrasi dengan **Supabase** jika variabel lingkungan dikonfigurasi. Jika database belum siap, sistem secara otomatis menggunakan **localStorage** browser sebagai *fallback* demo agar prototipe tetap berjalan. 
+Data laporan komunitas dan database rekening berisiko saat ini sudah terintegrasi dengan **Supabase** jika variabel lingkungan dikonfigurasi. Jika database belum siap, sistem secara otomatis menggunakan **localStorage** browser sebagai _fallback_ demo agar prototipe tetap berjalan.
 
 Untuk mode prototype saat ini, laporan dengan bukti foto tidak bergantung pada storage upload server. Frontend mengirim manifest metadata file agar submit tetap lolos validasi backend, sementara preview gambar tetap disimpan di browser untuk kebutuhan demo admin review.
 
-Sebelum benar-benar *live* untuk publik, pastikan untuk:
+Sebelum benar-benar _live_ untuk publik, pastikan untuk:
+
 - Mengaktifkan Row Level Security (RLS) di Supabase.
 - Menggunakan autentikasi admin yang lebih ketat (bukan hanya token statis).
 - Melakukan enkripsi pada data sensitif di tingkat database.
-- Memiliki proses verifikasi manual yang ketat sebelum memvonis rekening sebagai penipu.
+- Memiliki proses verifikasi manual yang ketat sebelum menetapkan rekening sebagai `verified_risky`.

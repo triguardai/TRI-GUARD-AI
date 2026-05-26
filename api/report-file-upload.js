@@ -65,9 +65,9 @@ export default async function handler(req, res) {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('evidence')
-        .getPublicUrl(fileName);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('evidence').getPublicUrl(fileName);
 
       // Save to database
       const { data: dbData, error: dbError } = await supabase

@@ -61,7 +61,9 @@ export default async function handler(req, res) {
   } = body;
 
   const normalizedAccountNumber = String(accountNumber || '').replace(/\D/g, '');
-  const normalizedBank = String(bank || '').trim().toUpperCase();
+  const normalizedBank = String(bank || '')
+    .trim()
+    .toUpperCase();
 
   // Hardened Server-side Validation
   if (!normalizedBank) {
@@ -134,7 +136,7 @@ export default async function handler(req, res) {
 
     // 3. Handle Images (Prototype: acknowledge image count for now...)
     // In a real production app, we would use supabase.storage.from('evidence').upload(...)
-    // for each base64 image. For this prototype, we store them as part of the report JSON 
+    // for each base64 image. For this prototype, we store them as part of the report JSON
     // or just acknowledge they were received.
 
     // 4. Insert OSINT Evidence if scraped

@@ -13,10 +13,7 @@ const isAuthorized = (req) => {
   const expected = process.env.ADMIN_OSINT_TOKEN;
 
   // Development bypass
-  if (
-    process.env.NODE_ENV !== 'production' &&
-    process.env.ALLOW_UNPROTECTED_ADMIN === 'true'
-  ) {
+  if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_UNPROTECTED_ADMIN === 'true') {
     return true;
   }
 
@@ -53,9 +50,10 @@ const SIMULATED_RESULTS = [
         title: 'Hati-hati Penipuan Jual Beli HP di Facebook',
         source_url: 'https://facebook.com/groups/korbanpenipuan/posts/1',
         source_host: 'facebook.com',
-        snippet: 'Awas rek BCA 9988776655 an Sang Penipu Gadungan. Udah transfer 2jt buat iPhone malah di block.'
-      }
-    ]
+        snippet:
+          'Awas rek BCA 9988776655 an Sang Penipu Gadungan. Udah transfer 2jt buat iPhone malah di block.',
+      },
+    ],
   },
   {
     id: 'mock-2',
@@ -74,10 +72,11 @@ const SIMULATED_RESULTS = [
         title: 'Waspada Akun Shopee Palsu',
         source_url: 'https://twitter.com/korban_scam/status/123',
         source_host: 'x.com',
-        snippet: 'Baru aja kena tipu sama seller ini, pake no dana 081234567890. Hati-hati ya guys!'
-      }
-    ]
-  }
+        snippet:
+          'Baru aja kena tipu sama seller ini, pake no dana 081234567890. Hati-hati ya guys!',
+      },
+    ],
+  },
 ];
 
 export default async function handler(req, res) {
