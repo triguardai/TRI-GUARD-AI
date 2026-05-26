@@ -282,6 +282,94 @@ const AccountChecker = () => {
     },
   ];
 
+  const buildResultFromApi = (data) => {
+    if (data.status === 'verified_risky' || data.status === 'rejected') {
+      return {
+        status: 'danger',
+        name: 'TERINDIKASI BERISIKO',
+        bank: 'DATABASE',
+        reports: data.source_count || 1,
+        trustScore: data.risk_score || 10,
+        headline: `${data.source_count || 1} laporan risiko ditemukan`,
+        message: 'AI menemukan laporan risiko terkait rekening ini di database review.',
+      };
+    }
+
+    if (data.status === 'candidate' || data.status === 'pending_review') {
+      return {
+        status: 'warning',
+        name: 'DALAM REVIEW',
+        bank: 'DATABASE',
+        reports: data.source_count || 0,
+        trustScore: data.risk_score || 40,
+        headline: 'Sedang ditinjau analis',
+        message:
+          'Rekening ini sedang dalam proses review karena ada laporan atau sinyal yang perlu diverifikasi.',
+      };
+    }
+
+    if (data.status === 'safe' || data.status === 'duplicate') {
+      return {
+        status: 'safe',
+        name: 'HASIL REVIEW: AMAN',
+        bank: 'DATABASE',
+        reports: 0,
+        trustScore: 90,
+        headline: 'Status: aman / duplikat',
+        message: 'Rekening ini telah direview dan tidak menunjukkan risiko aktif.',
+      };
+    }
+
+    return {
+      status: 'unknown',
+      name: 'TIDAK DITEMUKAN',
+      bank: 'UNKNOWN',
+      reports: 0,
+      trustScore: 50,
+      headline: 'Belum ada data review',
+      message: 'Rekening ini belum muncul di database review. Tetap cek konteks transaksi.',
+    };
+  };
+
+  const buildDemoFallbackResult = (searchedAccountNumber) => {
+    const matchedScammer = scrapedScammers.find((item) => item.acc === searchedAccountNumber);
+
+    if (matchedScammer) {
+      return {
+        status: 'danger',
+        name: matchedScammer.name,
+        bank: matchedScammer.bank,
+        reports: 1,
+        trustScore: 12,
+        headline: 'Terdeteksi di feed simulasi',
+        message: `Mode demo aktif. Rekening ini cocok dengan laporan simulasi dari ${matchedScammer.platform}.`,
+      };
+    }
+
+    if (searchedAccountNumber === '9988776655') {
+      return {
+        status: 'safe',
+        name: 'DIMAS PRATAMA',
+        bank: 'SEABANK',
+        reports: 0,
+        trustScore: 98,
+        headline: 'Tidak ada laporan risiko',
+        message: 'Mode demo aktif. Rekening contoh ini tidak memiliki laporan risiko.',
+      };
+    }
+
+    return {
+      status: 'offline',
+      name: 'SERVER BELUM TERSEDIA',
+      bank: 'UNKNOWN',
+      reports: 0,
+      trustScore: 0,
+      headline: 'Belum bisa verifikasi otomatis',
+      message:
+        'Layanan pengecekan sedang tidak tersedia. Coba lagi nanti atau gunakan laporan komunitas sebagai referensi sementara.',
+    };
+  };
+
   const handleSearch = async (event) => {
     event.preventDefault();
     if (!accountNumber) return;
@@ -290,61 +378,16 @@ const AccountChecker = () => {
     setResult(null);
 
     try {
-      const response = await fetch(`/api/check-account?accountNumber=${accountNumber}`);
+      const response = await fetch(`/api/check-account?accountNumber=${encodeURIComponent(accountNumber)}`);
       if (!response.ok) {
         throw new Error('Gagal cek rekening');
       }
 
       const data = await response.json();
-
-      if (data.status === 'verified_risky' || data.status === 'rejected') {
-        setResult({
-          status: 'danger',
-          name: 'TERINDIKASI PENIPUAN',
-          bank: 'BANK',
-          reports: data.source_count || 1,
-          trustScore: data.risk_score || 10,
-          message: 'HATI-HATI! AI menemukan laporan penipuan terkait rekening ini di database.',
-        });
-      } else if (data.status === 'candidate' || data.status === 'pending_review') {
-        setResult({
-          status: 'warning',
-          name: 'DALAM REVIEW',
-          bank: 'BANK',
-          reports: data.source_count || 0,
-          trustScore: data.risk_score || 40,
-          message:
-            'Rekening ini sedang dalam proses review oleh analis karena adanya laporan mencurigakan.',
-        });
-      } else if (data.status === 'safe' || data.status === 'duplicate') {
-        setResult({
-          status: 'safe',
-          name: 'HASIL REVIEW: AMAN/DUPLIKAT',
-          bank: 'BANK',
-          reports: 0,
-          trustScore: 90,
-          message: 'Rekening ini telah direview dan dianggap aman (atau duplikat).',
-        });
-      } else {
-        setResult({
-          status: 'unknown',
-          name: 'TIDAK DIKETAHUI',
-          bank: 'UNKNOWN',
-          reports: 0,
-          trustScore: 50,
-          message: 'Rekening ini belum ada dalam database OSINT AI kami. Tetap waspada.',
-        });
-      }
+      setResult(buildResultFromApi(data));
     } catch (error) {
       console.error('Account check error:', error);
-      setResult({
-        status: 'unknown',
-        name: 'GAGAL',
-        bank: 'UNKNOWN',
-        reports: 0,
-        trustScore: 0,
-        message: 'Gagal terhubung ke server untuk mengecek rekening.',
-      });
+      setResult(buildDemoFallbackResult(accountNumber));
     } finally {
       setIsSearching(false);
     }
@@ -421,7 +464,11 @@ const AccountChecker = () => {
                   ? 'border-emerald-500/30 bg-emerald-900/20'
                   : result.status === 'danger'
                     ? 'border-red-500/30 bg-red-900/20'
-                    : 'border-slate-700 bg-slate-800'
+                    : result.status === 'warning'
+                      ? 'border-amber-500/30 bg-amber-900/20'
+                      : result.status === 'offline'
+                        ? 'border-slate-600 bg-slate-800/90'
+                        : 'border-slate-700 bg-slate-800'
               }`}
             >
               <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
@@ -437,12 +484,17 @@ const AccountChecker = () => {
                       ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
                       : result.status === 'danger'
                         ? 'border-red-500 bg-red-500/10 text-red-400'
-                        : 'border-slate-600 bg-slate-700 text-slate-300'
+                        : result.status === 'warning'
+                          ? 'border-amber-500 bg-amber-500/10 text-amber-300'
+                          : 'border-slate-600 bg-slate-700 text-slate-300'
                   }`}
                 >
                   {result.status === 'safe' && <ShieldCheck className="h-5 w-5" />}
                   {result.status === 'danger' && <AlertTriangle className="h-5 w-5" />}
-                  {result.status === 'unknown' && <Search className="h-5 w-5" />}
+                  {result.status === 'warning' && <AlertTriangle className="h-5 w-5" />}
+                  {(result.status === 'unknown' || result.status === 'offline') && (
+                    <Search className="h-5 w-5" />
+                  )}
                   <span className="text-lg font-bold">Trust Score: {result.trustScore}%</span>
                 </div>
               </div>
@@ -453,10 +505,12 @@ const AccountChecker = () => {
                       ? 'bg-emerald-500/20 text-emerald-400'
                       : result.status === 'danger'
                         ? 'bg-red-500/20 text-red-400'
-                        : 'bg-slate-700 text-slate-400'
+                        : result.status === 'warning'
+                          ? 'bg-amber-500/20 text-amber-300'
+                          : 'bg-slate-700 text-slate-400'
                   }`}
                 >
-                  {result.reports > 0 ? (
+                  {result.status === 'danger' || result.status === 'warning' ? (
                     <AlertTriangle className="h-6 w-6" />
                   ) : (
                     <CheckCircle2 className="h-6 w-6" />
@@ -469,12 +523,12 @@ const AccountChecker = () => {
                         ? 'text-emerald-400'
                         : result.status === 'danger'
                           ? 'text-red-400'
+                          : result.status === 'warning'
+                            ? 'text-amber-300'
                           : 'text-slate-300'
                     }`}
                   >
-                    {result.reports > 0
-                      ? `${result.reports} Laporan Penipuan Terdeteksi AI!`
-                      : 'Status: Aman & Terverifikasi'}
+                    {result.headline}
                   </p>
                   <p className="text-sm leading-relaxed text-slate-400">{result.message}</p>
                 </div>
