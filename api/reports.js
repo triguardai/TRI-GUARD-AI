@@ -81,7 +81,7 @@ export default async function handler(req, res) {
   }
 
   const hasImages = base64Images && Array.isArray(base64Images) && base64Images.length > 0;
-  if (!evidenceUrl && !hasImages) {
+  if (!evidenceUrl && !hasImages && !scrapedEvidence) {
     return res.status(400).json({ error: 'Bukti (URL atau foto) wajib dilampirkan.' });
   }
 

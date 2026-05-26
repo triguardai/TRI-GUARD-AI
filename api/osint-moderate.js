@@ -68,7 +68,13 @@ export default async function handler(req, res) {
   }
 
   if (!isAuthorized(req)) {
-    return res.status(200).json({ ok: true, account: { id, status: nextStatus }, message: 'Mode Prototipe: Moderasi disimulasikan.' });
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      process.env.ALLOW_UNPROTECTED_ADMIN === 'true'
+    ) {
+      return res.status(200).json({ ok: true, account: { id, status: nextStatus }, message: 'Mode Prototipe: Moderasi disimulasikan.' });
+    }
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const supabase = getSupabase();

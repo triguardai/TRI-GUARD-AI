@@ -33,10 +33,14 @@ export const checkRateLimit = async (identifier, limit = 5, windowInSecs = 3600)
     const entry = memoryStore.get(identifier);
     if (!entry || now - entry.startedAt > windowInSecs * 1000) {
       memoryStore.set(identifier, { count: 1, startedAt: now });
-      return { success: true, count: 1 };
+      return { success: true, count: 1, fallback: 'memory' };
     }
     entry.count += 1;
-    return { success: entry.count <= limit, count: entry.count };
+    return { 
+      success: entry.count <= limit, 
+      count: entry.count,
+      fallback: 'memory'
+    };
   }
 };
 

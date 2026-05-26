@@ -94,5 +94,11 @@ npm run build
 
 ## Catatan Keamanan
 
-Halaman laporan dan blacklist masih prototype. Data laporan saat ini disimpan di `localStorage` browser untuk demo, bukan database production. Sebelum production perlu backend database, autentikasi admin, moderasi bukti, audit log, rate limit permanen, dan kebijakan privasi.
-Nomor rekening, nama, nomor HP, dan bukti transaksi adalah data sensitif. Jangan otomatis memvonis rekening sebagai penipu tanpa review manual dan proses sanggah.
+Data laporan komunitas dan blacklist saat ini sudah terintegrasi dengan **Supabase** jika variabel lingkungan dikonfigurasi. Jika database belum siap, sistem secara otomatis menggunakan **localStorage** browser sebagai *fallback* demo agar prototipe tetap berjalan. 
+
+Sebelum benar-benar *live* untuk publik, pastikan untuk:
+- Mengaktifkan Row Level Security (RLS) di Supabase.
+- Menggunakan autentikasi admin yang lebih ketat (bukan hanya token statis).
+- Melakukan enkripsi pada data sensitif di tingkat database.
+- Memiliki proses verifikasi manual yang ketat sebelum memvonis rekening sebagai penipu.
+
