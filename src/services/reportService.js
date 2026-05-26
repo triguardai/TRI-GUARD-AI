@@ -160,7 +160,7 @@ const buildCaseId = () => {
   return `TGA-${datePart}-${randomPart}`;
 };
 
-const estimateRiskScore = (report) => {
+export const estimateRiskScore = (report) => {
   let score = 20;
 
   if (report.accountNumber?.length >= 8) score += 20;
@@ -246,7 +246,7 @@ export async function submitReport(input) {
     writeStoredReports(nextReports);
 
     return { ok: true, report, reports: nextReports };
-  } catch (error) {
+  } catch {
     return handleMockFallback();
   }
 }
@@ -270,7 +270,10 @@ export async function scrapeEvidenceUrl(rawUrl) {
     const message = await response
       .json()
       .then((data) => data?.error)
-      .catch(() => null);
+      .catch((error) => {
+        console.error('API parse error:', error);
+        return null;
+      });
     throw new Error(message || 'Gagal mengambil metadata URL.');
   }
 
@@ -288,7 +291,10 @@ export async function searchOsintEvidence(payload) {
     const message = await response
       .json()
       .then((data) => data?.error)
-      .catch(() => null);
+      .catch((error) => {
+        console.error('API parse error:', error);
+        return null;
+      });
     throw new Error(message || 'Pencarian OSINT gagal.');
   }
 

@@ -336,6 +336,7 @@ const AccountChecker = () => {
         });
       }
     } catch (error) {
+      console.error('Account check error:', error);
       setResult({
         status: 'unknown',
         name: 'GAGAL',

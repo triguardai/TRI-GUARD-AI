@@ -348,7 +348,7 @@ const scrapeEvidence = async (url, req) => {
 
 const upsertCandidate = async (supabase, candidate, source) => {
   const normalized = candidate.normalized_account_number;
-  const bankName = candidate.bank_name || 'UNKNOWN';
+  const bankName = String(candidate.bank_name || 'UNKNOWN').trim().toUpperCase();
 
   const { data: existing, error: existingError } = await supabase
     .from('bank_accounts')

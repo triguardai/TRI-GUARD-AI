@@ -79,6 +79,7 @@ export default async function handler(req, res) {
       scraper: 'proxy',
     });
   } catch (error) {
+    console.error('Scrape proxy error:', error);
     res.status(500).json({ error: 'Terjadi kesalahan internal saat mengambil preview.' });
   }
 }

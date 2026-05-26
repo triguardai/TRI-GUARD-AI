@@ -42,6 +42,7 @@ export default async function handler(req, res) {
   }
 
   const normalizedAccountNumber = String(accountNumber).replace(/\D/g, '');
+  const normalizedBank = String(bank || '').trim().toUpperCase();
 
   try {
     let query = supabase
@@ -49,8 +50,8 @@ export default async function handler(req, res) {
       .select('status, risk_score, source_count')
       .eq('normalized_account_number', normalizedAccountNumber);
 
-    if (bank) {
-      query = query.eq('bank_name', String(bank).toUpperCase());
+    if (normalizedBank) {
+      query = query.eq('bank_name', normalizedBank);
     }
 
     const { data, error } = await query

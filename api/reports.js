@@ -56,22 +56,41 @@ export default async function handler(req, res) {
     fraudType,
     description,
     evidenceUrl,
+    base64Images,
     scrapedEvidence,
   } = body;
 
-  if (!bank || !accountNumber || !description) {
-    res.status(400).json({ error: 'Bank, nomor rekening, dan kronologi wajib diisi.' });
-    return;
+  const normalizedAccountNumber = String(accountNumber || '').replace(/\D/g, '');
+  const normalizedBank = String(bank || '').trim().toUpperCase();
+
+  // Hardened Server-side Validation
+  if (!normalizedBank) {
+    return res.status(400).json({ error: 'Bank atau e-wallet wajib diisi.' });
   }
 
-  const normalizedAccountNumber = String(accountNumber).replace(/\D/g, '');
+  if (!/^\d{6,20}$/.test(normalizedAccountNumber)) {
+    return res.status(400).json({ error: 'Nomor rekening tidak valid (6-20 digit).' });
+  }
+
+  if (!accountHolder || accountHolder.trim().length < 3) {
+    return res.status(400).json({ error: 'Nama pemilik rekening wajib diisi (min 3 karakter).' });
+  }
+
+  if (!description || description.trim().length < 30) {
+    return res.status(400).json({ error: 'Kronologi minimal 30 karakter agar dapat dianalisis.' });
+  }
+
+  const hasImages = base64Images && Array.isArray(base64Images) && base64Images.length > 0;
+  if (!evidenceUrl && !hasImages) {
+    return res.status(400).json({ error: 'Bukti (URL atau foto) wajib dilampirkan.' });
+  }
 
   try {
     // 1. Upsert Bank Account
     const { data: account, error: accountError } = await supabase
       .from('bank_accounts')
       .select('id, status')
-      .eq('bank_name', bank)
+      .eq('bank_name', normalizedBank)
       .eq('normalized_account_number', normalizedAccountNumber)
       .maybeSingle();
 
@@ -83,7 +102,7 @@ export default async function handler(req, res) {
       const { data: newAccount, error: insertAccountError } = await supabase
         .from('bank_accounts')
         .insert({
-          bank_name: bank,
+          bank_name: normalizedBank,
           account_number: accountNumber,
           normalized_account_number: normalizedAccountNumber,
           account_holder: accountHolder || null,
@@ -113,15 +132,20 @@ export default async function handler(req, res) {
 
     if (reportError) throw reportError;
 
-    // 3. Insert OSINT Evidence if scraped
-    if (scrapedEvidence && evidenceUrl) {
+    // 3. Handle Images (MVP: Just log count for now, real upload would go to Supabase Storage)
+    // In a real production app, we would use supabase.storage.from('evidence').upload(...)
+    // for each base64 image. For this prototype, we store them as part of the report JSON 
+    // or just acknowledge they were received.
+
+    // 4. Insert OSINT Evidence if scraped
+    if (scrapedEvidence && (evidenceUrl || hasImages)) {
       await supabase.from('osint_evidence').insert({
         bank_account_id: accountId,
-        source_url: scrapedEvidence.sourceUrl || evidenceUrl,
-        source_host: scrapedEvidence.sourceHost,
-        title: scrapedEvidence.title,
-        snippet: scrapedEvidence.description,
-        extracted_text: null, // Minimal storage for now
+        source_url: scrapedEvidence.sourceUrl || evidenceUrl || 'uploaded-file',
+        source_host: scrapedEvidence.sourceHost || (hasImages ? 'user-upload' : 'unknown'),
+        title: scrapedEvidence.title || 'Laporan Pengguna',
+        snippet: scrapedEvidence.description || description.slice(0, 200),
+        extracted_text: null,
         detected_accounts: scrapedEvidence.evidenceSignals || [],
         scrape_status: 'scraped',
       });

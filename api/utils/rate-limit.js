@@ -27,10 +27,16 @@ export const checkRateLimit = async (identifier, limit = 5, windowInSecs = 3600)
     }
     return { success: current <= limit, count: current };
   } catch (error) {
-    // If KV fails (e.g. network issue), allow it or fallback to memory?
-    // Safer to allow it if KV is down, or use memory.
-    console.error('KV rate limit error:', error);
-    return { success: true, count: 1 };
+    console.error('KV rate limit error, falling back to memory:', error);
+    
+    // Fallback to memoryStore
+    const entry = memoryStore.get(identifier);
+    if (!entry || now - entry.startedAt > windowInSecs * 1000) {
+      memoryStore.set(identifier, { count: 1, startedAt: now });
+      return { success: true, count: 1 };
+    }
+    entry.count += 1;
+    return { success: entry.count <= limit, count: entry.count };
   }
 };
 
