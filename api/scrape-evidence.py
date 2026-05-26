@@ -203,18 +203,35 @@ def build_payload(url):
     }
 
 
+def require_internal_token(handler):
+    expected = os.environ.get("INTERNAL_API_TOKEN")
+    received = handler.headers.get("X-Internal-Token")
+
+    if not expected:
+        return False
+
+    return received == expected
+
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type,X-Internal-Token")
         self.end_headers()
 
     def do_GET(self):
+        if not require_internal_token(self):
+            send_json(self, 401, {"error": "Unauthorized"})
+            return
+            
         query = parse_qs(urlparse(self.path).query)
         self.handle_scrape(query.get("url", [""])[0])
 
     def do_POST(self):
+        if not require_internal_token(self):
+            send_json(self, 401, {"error": "Unauthorized"})
+            return
+            
         length = int(self.headers.get("content-length") or 0)
         raw_body = self.rfile.read(length).decode("utf-8") if length else "{}"
 

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -13,7 +13,7 @@ import {
   ScanSearch,
   ShieldAlert,
   UploadCloud,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   buildClientUrlPreview,
   buildClientOsintPreview,
@@ -23,18 +23,18 @@ import {
   scrapeEvidenceUrl,
   searchOsintEvidence,
   submitReport,
-} from "../services/reportService";
+} from '../services/reportService';
 
 const initialForm = {
-  reporterName: "",
-  reporterContact: "",
-  bank: "BCA",
-  accountNumber: "",
-  accountHolder: "",
-  platform: "Semua platform publik",
-  fraudType: "Transaksi segitiga",
-  evidenceUrl: "",
-  description: "",
+  reporterName: '',
+  reporterContact: '',
+  bank: 'BCA',
+  accountNumber: '',
+  accountHolder: '',
+  platform: 'Semua platform publik',
+  fraudType: 'Transaksi segitiga',
+  evidenceUrl: '',
+  description: '',
   consent: false,
 };
 
@@ -48,7 +48,7 @@ const revealUp = {
 };
 
 const formatFileSize = (size) => {
-  if (!size) return "0 KB";
+  if (!size) return '0 KB';
   return `${Math.max(1, Math.round(size / 1024))} KB`;
 };
 
@@ -64,7 +64,7 @@ const ScrapePreview = ({ evidence }) => {
         <ScanSearch className="h-4 w-4" />
         Hasil Scraping URL
       </div>
-      <p className="text-sm font-bold text-white">{evidence.title || "Tanpa judul"}</p>
+      <p className="text-sm font-bold text-white">{evidence.title || 'Tanpa judul'}</p>
       <p className="mt-1 break-words text-xs text-cyan-100/80">
         {evidence.sourceHost || evidence.sourceUrl}
       </p>
@@ -83,9 +83,7 @@ const ScrapePreview = ({ evidence }) => {
           ))}
         </div>
       )}
-      <p className="mt-3 text-xs text-slate-500">
-        Engine: {evidence.scraper || "scrapling"}.
-      </p>
+      <p className="mt-3 text-xs text-slate-500">Engine: {evidence.scraper || 'scrapling'}.</p>
     </div>
   );
 };
@@ -101,7 +99,7 @@ const OsintResults = ({ mode, queries, results, onUseUrl }) => {
           OSINT Dork Search
         </div>
         <span className="rounded-full border border-blue-300/20 bg-slate-950/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-blue-200">
-          {mode === "live" ? "Live API" : "Preview"}
+          {mode === 'live' ? 'Live API' : 'Preview'}
         </span>
       </div>
 
@@ -118,7 +116,10 @@ const OsintResults = ({ mode, queries, results, onUseUrl }) => {
 
       <div className="space-y-3">
         {results.slice(0, 5).map((result) => (
-          <div key={`${result.query}-${result.url}`} className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+          <div
+            key={`${result.query}-${result.url}`}
+            className="rounded-xl border border-slate-800 bg-slate-950 p-3"
+          >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="line-clamp-2 text-sm font-bold text-white">{result.title}</p>
@@ -156,14 +157,15 @@ const OsintResults = ({ mode, queries, results, onUseUrl }) => {
 const ReportCenter = () => {
   const [form, setForm] = useState(initialForm);
   const [evidenceFiles, setEvidenceFiles] = useState([]);
+  const [base64Images, setBase64Images] = useState([]);
   const [filePreviews, setFilePreviews] = useState([]);
   const [scrapedEvidence, setScrapedEvidence] = useState(null);
-  const [scrapeStatus, setScrapeStatus] = useState("idle");
-  const [osintStatus, setOsintStatus] = useState("idle");
-  const [osintMode, setOsintMode] = useState("preview");
+  const [scrapeStatus, setScrapeStatus] = useState('idle');
+  const [osintStatus, setOsintStatus] = useState('idle');
+  const [osintMode, setOsintMode] = useState('preview');
   const [osintQueries, setOsintQueries] = useState([]);
   const [osintResults, setOsintResults] = useState([]);
-  const [osintMessage, setOsintMessage] = useState("");
+  const [osintMessage, setOsintMessage] = useState('');
   const [errors, setErrors] = useState({});
   const [recentReports, setRecentReports] = useState([]);
   const [submittedReport, setSubmittedReport] = useState(null);
@@ -183,9 +185,9 @@ const ReportCenter = () => {
     setErrors((prev) => ({ ...prev, [field]: undefined, evidence: undefined }));
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const files = Array.from(event.target.files || [])
-      .filter((file) => file.type.startsWith("image/"))
+      .filter((file) => file.type.startsWith('image/'))
       .slice(0, 3);
 
     setEvidenceFiles(files);
@@ -194,52 +196,58 @@ const ReportCenter = () => {
         name: file.name,
         size: file.size,
         previewUrl: URL.createObjectURL(file),
-      })),
+      }))
     );
     setErrors((prev) => ({ ...prev, evidence: undefined }));
+
+    const base64Array = await Promise.all(
+      files.map((file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      })
+    );
+    setBase64Images(base64Array);
   };
 
   const handleScrape = async () => {
     if (!form.evidenceUrl.trim()) {
-      setErrors((prev) => ({ ...prev, evidenceUrl: "Masukkan URL postingan publik." }));
+      setErrors((prev) => ({ ...prev, evidenceUrl: 'Masukkan URL postingan publik.' }));
       return;
     }
 
-    setScrapeStatus("loading");
+    setScrapeStatus('loading');
     setErrors((prev) => ({ ...prev, evidenceUrl: undefined }));
 
     try {
       const result = await scrapeEvidenceUrl(form.evidenceUrl.trim());
       setScrapedEvidence(result);
-      setScrapeStatus("success");
+      setScrapeStatus('success');
     } catch (error) {
       const fallbackPreview = buildClientUrlPreview(form.evidenceUrl.trim());
       setScrapedEvidence(fallbackPreview);
-      setScrapeStatus("fallback");
+      setScrapeStatus('fallback');
       setErrors((prev) => ({
         ...prev,
-        evidenceUrl: error.message || "Scraping gagal, URL tetap disimpan sebagai bukti.",
+        evidenceUrl: error.message || 'Scraping gagal, URL tetap disimpan sebagai bukti.',
       }));
     }
   };
 
   const handleOsintSearch = async () => {
-    const keyword = [
-      form.fraudType,
-      form.accountNumber,
-      form.accountHolder,
-      form.description,
-    ]
+    const keyword = [form.fraudType, form.accountNumber, form.accountHolder, form.description]
       .filter(Boolean)
-      .join(" ");
+      .join(' ');
 
     if (!form.accountNumber && !form.accountHolder && !keyword.trim()) {
-      setErrors((prev) => ({ ...prev, osint: "Isi nomor rekening atau nama dulu." }));
+      setErrors((prev) => ({ ...prev, osint: 'Isi nomor rekening atau nama dulu.' }));
       return;
     }
 
-    setOsintStatus("loading");
-    setOsintMessage("");
+    setOsintStatus('loading');
+    setOsintMessage('');
     setErrors((prev) => ({ ...prev, osint: undefined }));
 
     try {
@@ -251,11 +259,11 @@ const ReportCenter = () => {
         keyword,
       };
       const result = await searchOsintEvidence(searchPayload);
-      setOsintMode(result.mode || "live");
+      setOsintMode(result.mode || 'live');
       setOsintQueries(result.queries || []);
       setOsintResults(result.results || []);
-      setOsintMessage(result.message || "");
-      setOsintStatus("success");
+      setOsintMessage(result.message || '');
+      setOsintStatus('success');
     } catch (error) {
       const preview = buildClientOsintPreview(
         {
@@ -265,28 +273,28 @@ const ReportCenter = () => {
           platform: form.platform,
           keyword,
         },
-        error.message,
+        error.message
       );
 
       setOsintMode(preview.mode);
       setOsintQueries(preview.queries);
       setOsintResults(preview.results);
       setOsintMessage(preview.message);
-      setOsintStatus("success");
+      setOsintStatus('success');
     }
   };
 
   const useOsintUrl = async (url) => {
-    updateForm("evidenceUrl", url);
-    setScrapeStatus("loading");
+    updateForm('evidenceUrl', url);
+    setScrapeStatus('loading');
 
     try {
       const result = await scrapeEvidenceUrl(url);
       setScrapedEvidence(result);
-      setScrapeStatus("success");
+      setScrapeStatus('success');
     } catch {
       setScrapedEvidence(buildClientUrlPreview(url));
-      setScrapeStatus("fallback");
+      setScrapeStatus('fallback');
     }
   };
 
@@ -296,6 +304,7 @@ const ReportCenter = () => {
     const result = await submitReport({
       ...form,
       evidenceFiles,
+      base64Images,
       scrapedEvidence,
     });
 
@@ -308,9 +317,10 @@ const ReportCenter = () => {
     setRecentReports(result.reports);
     setForm(initialForm);
     setEvidenceFiles([]);
+    setBase64Images([]);
     setFilePreviews([]);
     setScrapedEvidence(null);
-    setScrapeStatus("idle");
+    setScrapeStatus('idle');
     setErrors({});
   };
 
@@ -352,7 +362,7 @@ const ReportCenter = () => {
                 </span>
                 <input
                   value={form.reporterName}
-                  onChange={(event) => updateForm("reporterName", event.target.value)}
+                  onChange={(event) => updateForm('reporterName', event.target.value)}
                   placeholder="Opsional"
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition focus:border-cyan-400"
                 />
@@ -364,7 +374,7 @@ const ReportCenter = () => {
                 </span>
                 <input
                   value={form.reporterContact}
-                  onChange={(event) => updateForm("reporterContact", event.target.value)}
+                  onChange={(event) => updateForm('reporterContact', event.target.value)}
                   placeholder="Email atau WhatsApp, opsional"
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition focus:border-cyan-400"
                 />
@@ -376,7 +386,7 @@ const ReportCenter = () => {
                 </span>
                 <input
                   value={form.bank}
-                  onChange={(event) => updateForm("bank", event.target.value)}
+                  onChange={(event) => updateForm('bank', event.target.value)}
                   placeholder="BCA, DANA, OVO, dll"
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition focus:border-cyan-400"
                 />
@@ -391,7 +401,7 @@ const ReportCenter = () => {
                   value={form.accountNumber}
                   inputMode="numeric"
                   onChange={(event) =>
-                    updateForm("accountNumber", event.target.value.replace(/\D/g, ""))
+                    updateForm('accountNumber', event.target.value.replace(/\D/g, ''))
                   }
                   placeholder="Contoh: 1234567890"
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 font-mono text-sm text-white placeholder-slate-500 outline-none transition focus:border-cyan-400"
@@ -405,7 +415,7 @@ const ReportCenter = () => {
                 </span>
                 <input
                   value={form.accountHolder}
-                  onChange={(event) => updateForm("accountHolder", event.target.value)}
+                  onChange={(event) => updateForm('accountHolder', event.target.value)}
                   placeholder="Nama yang muncul di mutasi"
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm uppercase text-white placeholder:normal-case placeholder-slate-500 outline-none transition focus:border-cyan-400"
                 />
@@ -418,7 +428,7 @@ const ReportCenter = () => {
                 </span>
                 <select
                   value={form.platform}
-                  onChange={(event) => updateForm("platform", event.target.value)}
+                  onChange={(event) => updateForm('platform', event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400"
                 >
                   {platformOptions.map((platform) => (
@@ -433,7 +443,7 @@ const ReportCenter = () => {
                 </span>
                 <select
                   value={form.fraudType}
-                  onChange={(event) => updateForm("fraudType", event.target.value)}
+                  onChange={(event) => updateForm('fraudType', event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400"
                 >
                   {fraudTypeOptions.map((fraudType) => (
@@ -451,20 +461,20 @@ const ReportCenter = () => {
                     Scraping Otomatis OSINT Dork
                   </div>
                   <p className="max-w-2xl text-sm leading-relaxed text-slate-400">
-                    Sistem membuat query seperti{" "}
+                    Sistem membuat query seperti{' '}
                     <code className="rounded bg-slate-900 px-1.5 py-0.5 text-cyan-200">
                       site:facebook.com OR site:x.com
-                    </code>{" "}
+                    </code>{' '}
                     dari platform, modus, nomor rekening, dan nama yang diisi.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleOsintSearch}
-                  disabled={osintStatus === "loading"}
+                  disabled={osintStatus === 'loading'}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
                 >
-                  {osintStatus === "loading" ? (
+                  {osintStatus === 'loading' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <ScanSearch className="h-4 w-4" />
@@ -537,7 +547,7 @@ const ReportCenter = () => {
                   <Link className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <input
                     value={form.evidenceUrl}
-                    onChange={(event) => updateForm("evidenceUrl", event.target.value)}
+                    onChange={(event) => updateForm('evidenceUrl', event.target.value)}
                     placeholder="https://..."
                     className="w-full rounded-xl border border-slate-700 bg-slate-950 py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition focus:border-cyan-400"
                   />
@@ -545,10 +555,10 @@ const ReportCenter = () => {
                 <button
                   type="button"
                   onClick={handleScrape}
-                  disabled={scrapeStatus === "loading"}
+                  disabled={scrapeStatus === 'loading'}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
                 >
-                  {scrapeStatus === "loading" ? (
+                  {scrapeStatus === 'loading' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <ScanSearch className="h-4 w-4" />
@@ -557,10 +567,10 @@ const ReportCenter = () => {
                 </button>
               </div>
               <FieldError>{errors.evidenceUrl}</FieldError>
-              {scrapeStatus === "fallback" && (
+              {scrapeStatus === 'fallback' && (
                 <p className="mt-2 text-xs text-amber-300">
-                  Preview lokal dipakai karena endpoint scraping belum tersedia atau target
-                  menolak akses.
+                  Preview lokal dipakai karena endpoint scraping belum tersedia atau target menolak
+                  akses.
                 </p>
               )}
               <div className="mt-4">
@@ -574,7 +584,7 @@ const ReportCenter = () => {
               </span>
               <textarea
                 value={form.description}
-                onChange={(event) => updateForm("description", event.target.value)}
+                onChange={(event) => updateForm('description', event.target.value)}
                 rows={5}
                 placeholder="Ceritakan urutan kejadian, nominal, platform, dan kenapa rekening ini perlu direview."
                 className="custom-scrollbar w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-relaxed text-white placeholder-slate-500 outline-none transition focus:border-cyan-400"
@@ -586,15 +596,16 @@ const ReportCenter = () => {
               <input
                 type="checkbox"
                 checked={form.consent}
-                onChange={(event) => updateForm("consent", event.target.checked)}
+                onChange={(event) => updateForm('consent', event.target.checked)}
                 className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-900 text-cyan-500"
               />
               <span className="text-sm leading-relaxed text-slate-300">
-                Saya setuju laporan ini diproses untuk review keamanan komunitas.
-                Bukti palsu atau doxing dapat ditolak oleh tim TriGuard.
+                Saya setuju laporan ini diproses untuk review keamanan komunitas. Bukti palsu atau
+                doxing dapat ditolak oleh tim TriGuard.
               </span>
             </label>
             <FieldError>{errors.consent}</FieldError>
+            <FieldError>{errors.submit}</FieldError>
 
             <button
               type="submit"
@@ -620,8 +631,8 @@ const ReportCenter = () => {
                 </div>
                 <p className="font-mono text-2xl font-bold text-white">{submittedReport.id}</p>
                 <p className="mt-2 text-sm leading-relaxed text-emerald-50/80">
-                  Status: {submittedReport.status}. Data ini masih tersimpan lokal
-                  sebagai prototype sampai backend database disiapkan.
+                  Status: {submittedReport.status}. Data ini masih tersimpan lokal sebagai prototype
+                  sampai backend database disiapkan.
                 </p>
               </div>
             )}
@@ -633,9 +644,9 @@ const ReportCenter = () => {
               </div>
               <div className="space-y-4">
                 {[
-                  "Pelapor mengirim rekening, kronologi, foto, dan URL publik.",
-                  "Scrapling mengambil metadata URL dan sinyal angka rekening yang terlihat.",
-                  "Analis memverifikasi bukti sebelum rekening masuk blacklist.",
+                  'Pelapor mengirim rekening, kronologi, foto, dan URL publik.',
+                  'Scrapling mengambil metadata URL dan sinyal angka rekening yang terlihat.',
+                  'Analis memverifikasi bukti sebelum rekening masuk blacklist.',
                 ].map((item, index) => (
                   <div key={item} className="flex gap-3">
                     <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-xs font-bold text-cyan-200">
@@ -654,8 +665,8 @@ const ReportCenter = () => {
               </div>
               {recentReports.length === 0 ? (
                 <p className="text-sm leading-relaxed text-slate-500">
-                  Belum ada laporan di browser ini. Kirim satu laporan untuk melihat
-                  bagaimana antrian review tampil.
+                  Belum ada laporan di browser ini. Kirim satu laporan untuk melihat bagaimana
+                  antrian review tampil.
                 </p>
               ) : (
                 <div className="space-y-3">

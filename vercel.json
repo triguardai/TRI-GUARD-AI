@@ -2,11 +2,5 @@
   "framework": "vite",
   "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    {
-      "source": "/admin/osint-candidates",
-      "destination": "/index.html"
-    }
-  ]
+  "outputDirectory": "dist"
 }

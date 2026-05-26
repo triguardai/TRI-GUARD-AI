@@ -1,15 +1,22 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
 const getSupabase = () => {
-  const url = process.env.SUPABASE_URL;
+  let url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
+  // Clean URL: strip trailing /rest/v1/ if the user accidentally included it
+  url = url.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
   return createClient(url, key, { auth: { persistSession: false } });
 };
 
 const isAuthorized = (req) => {
-  if (!process.env.ADMIN_OSINT_TOKEN) return true;
-  return req.headers["x-admin-token"] === process.env.ADMIN_OSINT_TOKEN;
+  const expected = process.env.ADMIN_OSINT_TOKEN;
+
+  if (!expected) {
+    return true; // Allow access for prototype if no token is set
+  }
+
+  return req.headers['x-admin-token'] === expected;
 };
 
 const groupEvidence = (rows = []) =>
@@ -20,47 +27,93 @@ const groupEvidence = (rows = []) =>
     return acc;
   }, new Map());
 
-export default async function handler(req, res) {
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
+const SIMULATED_RESULTS = [
+  {
+    id: 'mock-1',
+    bank_name: 'BCA',
+    account_number: '9988776655',
+    normalized_account_number: '9988776655',
+    account_holder: 'SANG PENIPU GADUNGAN',
+    status: 'candidate',
+    risk_score: 92,
+    source_count: 3,
+    last_seen_at: new Date().toISOString(),
+    evidence: [
+      {
+        id: 'ev-1',
+        title: 'Hati-hati Penipuan Jual Beli HP di Facebook',
+        source_url: 'https://facebook.com/groups/korbanpenipuan/posts/1',
+        source_host: 'facebook.com',
+        snippet: 'Awas rek BCA 9988776655 an Sang Penipu Gadungan. Udah transfer 2jt buat iPhone malah di block.'
+      }
+    ]
+  },
+  {
+    id: 'mock-2',
+    bank_name: 'DANA',
+    account_number: '081234567890',
+    normalized_account_number: '081234567890',
+    account_holder: 'AKUN BODONG',
+    status: 'candidate',
+    risk_score: 85,
+    source_count: 1,
+    last_seen_at: new Date().toISOString(),
+    evidence: [
+      {
+        id: 'ev-2',
+        title: 'Waspada Akun Shopee Palsu',
+        source_url: 'https://twitter.com/korban_scam/status/123',
+        source_host: 'x.com',
+        snippet: 'Baru aja kena tipu sama seller ini, pake no dana 081234567890. Hati-hati ya guys!'
+      }
+    ]
+  }
+];
 
-  if (req.method !== "GET") {
-    res.status(405).json({ error: "Method not allowed" });
+export default async function handler(req, res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
+  // Helper to send mock data
+  const sendMockData = (message) => {
+    res.status(200).json({
+      configured: false,
+      items: SIMULATED_RESULTS,
+      message: `Mode Prototipe: ${message}`,
+    });
+  };
+
   if (!isAuthorized(req)) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
+    return sendMockData('Menampilkan data simulasi (Unauthorized).');
   }
 
   const supabase = getSupabase();
   if (!supabase) {
-    res.status(200).json({
-      configured: false,
-      items: [],
-      message: "Supabase belum dikonfigurasi.",
-    });
-    return;
+    return sendMockData('Supabase belum dikonfigurasi.');
   }
 
-  const status = String(req.query.status || "all");
+  const status = String(req.query.status || 'all');
   const limit = Math.min(Number(req.query.limit || 40), 100);
 
   let query = supabase
-    .from("bank_accounts")
-    .select("*")
-    .order("last_seen_at", { ascending: false })
+    .from('bank_accounts')
+    .select('*')
+    .order('last_seen_at', { ascending: false })
     .limit(limit);
 
-  if (status !== "all") {
-    query = query.eq("status", status);
+  if (status !== 'all') {
+    query = query.eq('status', status);
   }
 
   const { data: accounts, error } = await query;
   if (error) {
-    res.status(500).json({ error: error.message });
-    return;
+    // If DB fails (like permission denied), fallback to mock
+    return sendMockData(`DB Error: ${error.message}`);
   }
 
   const accountIds = (accounts || []).map((account) => account.id);
@@ -68,10 +121,12 @@ export default async function handler(req, res) {
 
   if (accountIds.length > 0) {
     const { data: evidence, error: evidenceError } = await supabase
-      .from("osint_evidence")
-      .select("id, bank_account_id, source_url, source_host, title, snippet, confidence_score, created_at, detected_accounts")
-      .in("bank_account_id", accountIds)
-      .order("created_at", { ascending: false })
+      .from('osint_evidence')
+      .select(
+        'id, bank_account_id, source_url, source_host, title, snippet, confidence_score, created_at, detected_accounts'
+      )
+      .in('bank_account_id', accountIds)
+      .order('created_at', { ascending: false })
       .limit(accountIds.length * 3);
 
     if (evidenceError) {
