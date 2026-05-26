@@ -132,7 +132,7 @@ export default async function handler(req, res) {
 
     if (reportError) throw reportError;
 
-    // 3. Handle Images (MVP: Just log count for now, real upload would go to Supabase Storage)
+    // 3. Handle Images (Prototype: acknowledge image count for now...)
     // In a real production app, we would use supabase.storage.from('evidence').upload(...)
     // for each base64 image. For this prototype, we store them as part of the report JSON 
     // or just acknowledge they were received.

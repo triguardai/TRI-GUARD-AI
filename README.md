@@ -1,17 +1,17 @@
 # TRI-GUARD-AI
 
-Landing page prototype untuk TriGuard AI, solusi AI escrow untuk membantu mencegah penipuan transaksi online dengan proteksi dana, verifikasi rekening, blacklist scammer, dan simulasi pelacakan resi.
+Landing page prototype untuk TriGuard AI, solusi AI escrow untuk membantu mencegah penipuan transaksi online dengan proteksi dana, verifikasi rekening, database rekening berisiko, dan simulasi pelacakan resi.
 
 ## Fitur Prototype
 
 - Landing page AI escrow dan simulasi alur `/rekber`
-- Cek blacklist rekening berbasis data demo
+- Cek database rekening berisiko berbasis data demo
 - Pusat laporan komunitas untuk melaporkan rekening penipu
 - Upload bukti foto dan URL postingan publik
 - Scraping otomatis OSINT dork lintas platform publik via Brave Search API atau Google CSE
 - Endpoint `/api/scrape-evidence` untuk mengambil metadata, excerpt, dan kandidat rekening dari URL bukti
 - Endpoint `/api/osint-search` untuk search, scrape, extraction, dan upsert kandidat ke Supabase
-- Halaman admin `/admin/osint-candidates` untuk verify, reject, atau tandai duplicate
+- Halaman admin `/admin/osint-candidates` untuk verifikasi, reject, atau tandai duplicate
 - Endpoint `/api/chat` agar Gemini API key tidak terekspos di bundle frontend
 
 ## Stack
@@ -69,7 +69,7 @@ Jalankan schema di Supabase SQL Editor:
 ```
 
 Status otomatis dari pipeline OSINT selalu `candidate`. Rekening baru masuk status
-`verified_risky` hanya setelah admin menekan tombol verify di `/admin/osint-candidates`.
+`verified_risky` hanya setelah admin menekan tombol verifikasi di `/admin/osint-candidates`.
 
 ## Menjalankan Project
 
@@ -94,7 +94,7 @@ npm run build
 
 ## Catatan Keamanan
 
-Data laporan komunitas dan blacklist saat ini sudah terintegrasi dengan **Supabase** jika variabel lingkungan dikonfigurasi. Jika database belum siap, sistem secara otomatis menggunakan **localStorage** browser sebagai *fallback* demo agar prototipe tetap berjalan. 
+Data laporan komunitas dan database rekening berisiko saat ini sudah terintegrasi dengan **Supabase** jika variabel lingkungan dikonfigurasi. Jika database belum siap, sistem secara otomatis menggunakan **localStorage** browser sebagai *fallback* demo agar prototipe tetap berjalan. 
 
 Sebelum benar-benar *live* untuk publik, pastikan untuk:
 - Mengaktifkan Row Level Security (RLS) di Supabase.

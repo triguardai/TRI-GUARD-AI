@@ -451,7 +451,10 @@ const AdminOsintCandidates = () => {
     setError('');
 
     try {
-      await moderateCandidate({ adminToken, id, action });
+      const result = await moderateCandidate({ adminToken, id, action });
+      if (result.message) {
+        setMessage(result.message);
+      }
       await loadCandidates();
     } catch (moderateError) {
       setError(moderateError.message);
