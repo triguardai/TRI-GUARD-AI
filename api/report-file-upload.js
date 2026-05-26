@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
   const form = formidable({
     maxFiles: 3,
-    maxFileSize: 5 * 1024 * 1024, // 5MB
+    maxFileSize: 5 * 1024 * 1024,
     keepExtensions: true,
   });
 
@@ -55,7 +55,6 @@ export default async function handler(req, res) {
       const fileName = `${reportId}/${Date.now()}-${file.originalFilename}`;
       const fileBuffer = fs.readFileSync(file.filepath);
 
-      // Upload to Supabase Storage Bucket 'evidence'
       const { error: uploadError } = await supabase.storage
         .from('evidence')
         .upload(fileName, fileBuffer, {
@@ -69,7 +68,6 @@ export default async function handler(req, res) {
         data: { publicUrl },
       } = supabase.storage.from('evidence').getPublicUrl(fileName);
 
-      // Save to database
       const { data: dbData, error: dbError } = await supabase
         .from('evidence_files')
         .insert({

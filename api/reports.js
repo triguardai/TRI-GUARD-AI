@@ -1,14 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimit, getClientId } from './utils/rate-limit.js';
 
-const WINDOW_IN_SECS = 3600; // 1 hour
-const MAX_REQUESTS = 10; // 10 reports per hour
+const WINDOW_IN_SECS = 3600;
+const MAX_REQUESTS = 10;
 
 const getSupabase = () => {
   let url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
-  // Clean URL: strip trailing /rest/v1/ if the user accidentally included it
   url = url.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
   return createClient(url, key, { auth: { persistSession: false } });
 };
@@ -65,7 +64,6 @@ export default async function handler(req, res) {
     .trim()
     .toUpperCase();
 
-  // Hardened Server-side Validation
   if (!normalizedBank) {
     return res.status(400).json({ error: 'Bank atau e-wallet wajib diisi.' });
   }
@@ -88,7 +86,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Upsert Bank Account
     const { data: account, error: accountError } = await supabase
       .from('bank_accounts')
       .select('id, status')
@@ -117,7 +114,6 @@ export default async function handler(req, res) {
       accountId = newAccount.id;
     }
 
-    // 2. Insert Community Report
     const { data: report, error: reportError } = await supabase
       .from('community_reports')
       .insert({
@@ -134,12 +130,6 @@ export default async function handler(req, res) {
 
     if (reportError) throw reportError;
 
-    // 3. Handle Images (Prototype: acknowledge image count for now...)
-    // In a real production app, we would use supabase.storage.from('evidence').upload(...)
-    // for each base64 image. For this prototype, we store them as part of the report JSON
-    // or just acknowledge they were received.
-
-    // 4. Insert OSINT Evidence if scraped
     if (scrapedEvidence && (evidenceUrl || hasImages)) {
       await supabase.from('osint_evidence').insert({
         bank_account_id: accountId,

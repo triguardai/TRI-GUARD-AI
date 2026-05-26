@@ -631,8 +631,8 @@ const ReportCenter = () => {
                 </div>
                 <p className="font-mono text-2xl font-bold text-white">{submittedReport.id}</p>
                 <p className="mt-2 text-sm leading-relaxed text-emerald-50/80">
-                  Status: {submittedReport.status}. Data ini masih tersimpan lokal sebagai prototype
-                  sampai backend database disiapkan.
+                  Status: {submittedReport.status}. Data ditampilkan di antrian prototype. Jika
+                  backend aktif, laporan juga dikirim ke database review.
                 </p>
               </div>
             )}
@@ -646,7 +646,7 @@ const ReportCenter = () => {
                 {[
                   'Pelapor mengirim rekening, kronologi, foto, dan URL publik.',
                   'Scrapling mengambil metadata URL dan sinyal angka rekening yang terlihat.',
-                  'Analis memverifikasi bukti sebelum rekening masuk blacklist.',
+                  'Analis memverifikasi bukti sebelum rekening diberi status verified_risky.',
                 ].map((item, index) => (
                   <div key={item} className="flex gap-3">
                     <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-xs font-bold text-cyan-200">
