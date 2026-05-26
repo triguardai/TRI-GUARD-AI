@@ -137,6 +137,11 @@ const CandidateCard = ({ candidate, onModerate, busyAction }) => {
             >
               {status.replaceAll('_', ' ')}
             </span>
+            {candidate.is_simulated && (
+              <span className="rounded-full border border-cyan-500/50 bg-cyan-500/20 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-cyan-200">
+                Simulasi
+              </span>
+            )}
             <span className="rounded-full border border-slate-700 bg-slate-950 px-2.5 py-1 text-[11px] font-bold text-slate-300">
               Risk {candidate.risk_score || 0}%
             </span>

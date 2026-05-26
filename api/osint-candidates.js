@@ -38,6 +38,7 @@ const groupEvidence = (rows = []) =>
 const SIMULATED_RESULTS = [
   {
     id: 'mock-1',
+    is_simulated: true,
     bank_name: 'BCA',
     account_number: '9988776655',
     normalized_account_number: '9988776655',
@@ -58,6 +59,7 @@ const SIMULATED_RESULTS = [
   },
   {
     id: 'mock-2',
+    is_simulated: true,
     bank_name: 'DANA',
     account_number: '081234567890',
     normalized_account_number: '081234567890',
