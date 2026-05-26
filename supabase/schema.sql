@@ -65,6 +65,16 @@ create table if not exists moderation_logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists evidence_files (
+  id uuid primary key default gen_random_uuid(),
+  report_id uuid references community_reports(id) on delete cascade,
+  file_url text not null,
+  file_name text,
+  file_size int,
+  mime_type text,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists bank_accounts_status_idx on bank_accounts(status);
 create index if not exists bank_accounts_last_seen_idx on bank_accounts(last_seen_at desc);
 create index if not exists osint_evidence_bank_account_idx on osint_evidence(bank_account_id);
