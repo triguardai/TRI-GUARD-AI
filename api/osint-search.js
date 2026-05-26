@@ -405,7 +405,14 @@ const isAdminRequest = (req) => {
   const token = req.headers['x-admin-token'];
   const expected = process.env.ADMIN_OSINT_TOKEN;
 
-  if (!expected) return true;
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.ALLOW_UNPROTECTED_ADMIN === 'true'
+  ) {
+    return true;
+  }
+
+  if (!expected) return false;
   return token === expected;
 };
 

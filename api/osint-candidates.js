@@ -12,8 +12,16 @@ const getSupabase = () => {
 const isAuthorized = (req) => {
   const expected = process.env.ADMIN_OSINT_TOKEN;
 
+  // Development bypass
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.ALLOW_UNPROTECTED_ADMIN === 'true'
+  ) {
+    return true;
+  }
+
   if (!expected) {
-    return true; // Allow access for prototype if no token is set
+    return false; // Fail-closed
   }
 
   return req.headers['x-admin-token'] === expected;

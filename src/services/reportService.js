@@ -234,7 +234,7 @@ export async function submitReport(input) {
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       
-      if (data.error === 'Database tidak dikonfigurasi.' || response.status === 500) {
+      if (data.error === 'Database tidak dikonfigurasi.' || response.status === 500 || response.status === 404) {
         return handleMockFallback();
       }
 
