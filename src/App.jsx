@@ -560,7 +560,7 @@ const AccountChecker = () => {
                   </div>
                   <div className="relative flex-1 rounded-xl border border-slate-800 bg-slate-950 p-4">
                     <div className="absolute top-4 right-4">{scammer.icon}</div>
-                    <p className="mb-3 text-sm italic text-slate-300">{scammer.post}</p>
+                    <p className="mb-3 pr-10 text-sm italic text-slate-300">{scammer.post}</p>
                     <div className="flex items-center gap-2 text-xs text-slate-500">
                       <span>Sumber: {scammer.platform}</span>
                       <span>•</span>
@@ -646,14 +646,14 @@ const RekberSimulation = () => {
     {
       sender: 'Dimas (Penjual)',
       role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffdfbf',
       text: 'Oke siap, aku antar ke J&T sekarang.',
     },
     { type: 'system', text: '... 2 Jam Kemudian ...' },
     {
       sender: 'Dimas (Penjual)',
       role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffdfbf',
       text: 'JNT001122334455\nItu resinya ya mas',
     },
     {
@@ -677,7 +677,7 @@ const RekberSimulation = () => {
     {
       sender: 'Dimas (Penjual)',
       role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffdfbf',
       text: 'Seabank\n9988776655\nDimas Pratama',
     },
     {
@@ -715,7 +715,7 @@ const RekberSimulation = () => {
     {
       sender: 'Dimas (Penjual)',
       role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffdfbf',
       text: 'Halo mas, iya masih ready. Kelengkapan fullset ori, minus pemakaian aja dikit di bezel ya.',
     },
     {
@@ -727,7 +727,7 @@ const RekberSimulation = () => {
     {
       sender: 'Dimas (Penjual)',
       role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffdfbf',
       text: 'Imei aman sentosa mas, ex inter tapi udah terdaftar bea cukai. (Mengirim Video 0:45)',
     },
     {
@@ -739,7 +739,7 @@ const RekberSimulation = () => {
     {
       sender: 'Dimas (Penjual)',
       role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffdfbf',
       text: 'Ada yang nawar 1.8 kemaren ngga aku lepas. Udah pas aja 2 juta mas, murah meriah.',
     },
     {
@@ -751,7 +751,7 @@ const RekberSimulation = () => {
     {
       sender: 'Dimas (Penjual)',
       role: 'seller',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffdfbf',
       text: 'Boleh mas, bebas. Biar enak juga. Ongkir sama admin rekbernya mas yang tanggung ya?',
     },
     {
@@ -775,38 +775,6 @@ const RekberSimulation = () => {
             viewport={viewportLoop}
             className="order-2 w-full lg:order-1 lg:w-1/2"
           >
-            <div className="relative z-10 mx-auto mb-6 flex w-fit flex-wrap justify-center gap-2 rounded-xl border border-white/5 bg-slate-800/80 p-1.5 backdrop-blur-sm">
-              <button
-                onClick={() => setActiveTab('private')}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'private'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <User className="h-4 w-4" /> 1. Negosiasi Awal
-              </button>
-              <button
-                onClick={() => setActiveTab('group')}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'group'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <Bot className="h-4 w-4" /> 2. Demo Utama /rekber
-              </button>
-              <button
-                onClick={() => setActiveTab('tracking')}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === 'tracking'
-                    ? 'bg-emerald-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <Truck className="h-4 w-4" /> 3. Demo Pendukung: Cek Resi
-              </button>
-            </div>
 
             <div className="relative mx-auto max-w-md rounded-[3rem] border-4 border-slate-700 bg-slate-800 p-3 shadow-2xl">
               <div className="absolute top-3 left-1/2 z-20 h-7 w-32 -translate-x-1/2 rounded-b-3xl bg-slate-950" />
@@ -852,7 +820,7 @@ const RekberSimulation = () => {
                         <>
                           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-slate-500 bg-slate-700">
                             <img
-                              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas&backgroundColor=ffdfbf"
+                              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffdfbf"
                               alt="Dimas"
                               className="h-full w-full"
                             />
@@ -1308,26 +1276,34 @@ const HowItWorks = () => {
                   </div>
 
                   <div
-                    className={`relative flex items-center gap-4 overflow-hidden rounded-2xl border p-4 transition-all duration-500 ${
-                      isProtected
-                        ? 'border-emerald-500/50 bg-emerald-900/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
-                        : 'border-white/10 bg-white/5 opacity-50 grayscale'
-                    }`}
-                  >
-                    <div className="z-10 flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400 bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
-                      <Search className="h-4 w-4" />
-                    </div>
-                    <div className="z-10">
-                      <p className="mb-0.5 text-[10px] uppercase tracking-wider text-slate-400">
-                        Verifikasi Identitas AI
-                      </p>
-                      <p className="text-sm font-bold text-white">2. Cek Real-Time</p>
-                      <p className="mt-0.5 text-xs text-emerald-100">
-                        Sistem mencocokkan identitas pengirim dan memindai riwayat penipuan sebelum
-                        dana diteruskan.
-                      </p>
-                    </div>
-                  </div>
+                  className={`relative overflow-hidden rounded-2xl border p-4 transition-all duration-500 ${
+                    isProtected
+                    ? 'border-emerald-500/50 bg-emerald-900/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                    : 'border-white/10 bg-white/5 opacity-50 grayscale'}`}>
+                      <div className="relative z-10 mb-2 flex items-center gap-3">
+                        <div
+                        className={`rounded-lg border p-1.5 ${
+                          isProtected
+                          ? 'border-emerald-400 bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                          : 'border-slate-700 bg-slate-800 text-slate-500'}`}>
+                            <Search className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold leading-tight text-white">
+                                Verifikasi Identitas AI
+                                </p>
+                                <p className="mt-0.5 text-[9px] uppercase tracking-widest text-slate-400">
+                                  2. Cek Real-Time
+                                  </p>
+                                  </div>
+                                  </div>
+                                  <p
+                                  className={`relative z-10 text-[10px] leading-relaxed ${
+                                    isProtected ? 'text-emerald-100' : 'text-slate-500'}`}>
+                                      Sistem mencocokkan identitas pengirim dan memindai riwayat penipuan sebelum
+                                      dana diteruskan.
+                                      </p>
+                                      </div>
 
                   <div
                     className={`relative overflow-hidden rounded-2xl border p-4 transition-all duration-500 ${
@@ -1363,11 +1339,6 @@ const HowItWorks = () => {
                       AI memantau pergerakan fisik barang sampai status delivered terkonfirmasi oleh
                       sistem dan pembeli.
                     </p>
-                    {isProtected && (
-                      <div className="absolute right-[-10px] bottom-[-10px] opacity-10">
-                        <Truck className="h-16 w-16 text-purple-400" />
-                      </div>
-                    )}
                   </div>
                 </div>
 
