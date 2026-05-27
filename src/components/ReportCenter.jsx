@@ -28,7 +28,7 @@ import {
 const initialForm = {
   reporterName: '',
   reporterContact: '',
-  bank: 'BCA',
+  bank: '',
   accountNumber: '',
   accountHolder: '',
   platform: 'Semua platform publik',
@@ -469,18 +469,18 @@ const ReportCenter = () => {
                   </p>
                 </div>
                 <button
-                  type="button"
-                  onClick={handleOsintSearch}
-                  disabled={osintStatus === 'loading'}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+                type="button"
+                onClick={handleOsintSearch}
+                disabled={osintStatus === 'loading'}
+                className="self-start whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
                 >
                   {osintStatus === 'loading' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <ScanSearch className="h-4 w-4" />
+                  <ScanSearch className="h-4 w-4" />
                   )}
                   Cari Bukti Publik
-                </button>
+                  </button>
               </div>
               <FieldError>{errors.osint}</FieldError>
               {osintMessage && <p className="mt-3 text-xs text-amber-300">{osintMessage}</p>}
