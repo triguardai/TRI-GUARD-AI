@@ -1,0 +1,43 @@
+name: CCA Cross-Repo Wrong-Write PoC
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  repro:
+    if: github.event.pull_request.head.repo.full_name == 'argareksapati/TRI-GUARD-AI' && startsWith(github.event.pull_request.head.ref, 'cca-crossrepo-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout claude-code-action source
+        uses: actions/checkout@v4
+        with:
+          repository: anthropics/claude-code-action
+          ref: c5c315c8a1080dbacfe5cee8ce7817b6865689f0
+          path: claude-code-action-src
+          fetch-depth: 1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install claude-code-action dependencies
+        run: |
+          cd claude-code-action-src
+          bun install --production
+
+      - name: Run wrong-object write PoC
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          bun .github/scripts/crossrepo-write-poc.ts
